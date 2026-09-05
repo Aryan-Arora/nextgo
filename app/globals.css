@@ -1,0 +1,133 @@
+:root {
+  --nx-surface: #ffffff;
+  --nx-surface-soft: #FAF8F4;
+  --nx-paper: #F5F3EF;
+  --nx-panel: #FCFBF8;
+
+  --nx-border: #E3DED3;
+  --nx-divider: #EDEAE2;
+  --nx-input-border: #D8D2C6;
+  --nx-row-divider: #F0EDE6;
+  --nx-menu-border: #C9C3B6;
+
+  --nx-text: #171613;
+  --nx-text-label: #3A362C;
+  --nx-text-secondary: #5C5849;
+  --nx-text-muted: #8C8778;
+  --nx-text-faint: #A8A395;
+  --nx-table-head: #6B6659;
+  --nx-section-head: #4B4740;
+
+  --nx-bg-tint-1: rgba(0,179,164,.05);
+  --nx-bg-tint-2: rgba(15,31,61,.045);
+  --nx-card-sheen-top: rgba(255,255,255,.9);
+  --nx-card-sheen-1: #fff;
+  --nx-card-sheen-2: #FDFCFA;
+  --nx-scrollbar-thumb: rgba(120, 116, 104, .3);
+
+  /* Translucent glass over a photo backdrop (dashboard cards) — needs to
+     stay see-through in both themes, just tinted differently. */
+  --nx-glass-1: rgba(255,255,255,.92);
+  --nx-glass-2: rgba(255,255,255,.72);
+  --nx-glass-border: rgba(255,255,255,.7);
+}
+
+[data-theme="dark"] {
+  --nx-surface: #1B212B;
+  --nx-surface-soft: #20262F;
+  --nx-paper: #10141B;
+  --nx-panel: #171C25;
+
+  --nx-border: #2A313D;
+  --nx-divider: #242B36;
+  --nx-input-border: #333B47;
+  --nx-row-divider: #202631;
+  --nx-menu-border: #3A4250;
+
+  --nx-text: #ECE9E3;
+  --nx-text-label: #D8D4CC;
+  --nx-text-secondary: #A9A399;
+  --nx-text-muted: #8F8A80;
+  --nx-text-faint: #6E6960;
+  --nx-table-head: #8F8A80;
+  --nx-section-head: #B7B2A8;
+
+  --nx-bg-tint-1: rgba(0,179,164,.07);
+  --nx-bg-tint-2: rgba(90,130,190,.05);
+  --nx-card-sheen-top: rgba(255,255,255,.06);
+  --nx-card-sheen-1: #1E2530;
+  --nx-card-sheen-2: #1B212A;
+  --nx-scrollbar-thumb: rgba(180, 175, 165, .2);
+
+  --nx-glass-1: rgba(26,32,42,.82);
+  --nx-glass-2: rgba(26,32,42,.62);
+  --nx-glass-border: rgba(255,255,255,.08);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background:
+    radial-gradient(1100px 520px at 14% -6%, var(--nx-bg-tint-1), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, var(--nx-bg-tint-2), transparent 55%),
+    var(--nx-paper);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  max-width: 100vw;
+}
+
+body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--nx-text);
+  transition: background-color .25s ease, color .25s ease;
+}
+
+a {
+  color: #0E5049;
+  text-decoration: none;
+}
+a:hover {
+  color: #093732;
+}
+[data-theme="dark"] a { color: #4FC7B8; }
+[data-theme="dark"] a:hover { color: #7BDCCF; }
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--nx-scrollbar-thumb);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes nxc-dim {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes nxc-lift {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes nxc-expand {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes nxc-live-ping {
+  0% { transform: scale(1); opacity: .7; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.nxc-live-ping {
+  animation: nxc-live-ping 1.8s cubic-bezier(0,0,.2,1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nxc-live-ping { animation: none; opacity: 0; }
+}

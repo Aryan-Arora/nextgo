@@ -1,0 +1,113 @@
+@AGENTS.md
+
+# NEXGO — Project Memory
+
+Multi-courier shipping/logistics aggregator (seller-facing console + platform admin panel). Think Shiprocket/Pickrr clone: sellers connect their storefronts (Amazon/Shopify/Woo/OpenCart/Magento), sync orders, compare courier rates, book shipments, and reconcile COD/wallet/GST. There's also a platform-wide admin panel for the NEXGO operator to manage all sellers/couriers/jobs.
+
+**Status (2026-09-05): frontend-only, presented today as a design prototype.** Every screen renders from static mock data in `lib/data.js` — no backend, no auth, no persistence. All 46 routes verified working (200s, zero console errors). This doc maps what the backend needs to support before any of this is real. Update this file as backend work starts.
+
+## Stack & structure
+- Next.js 16 (App Router), React 19, JS (no TS). Runs on port 3021 locally (`.claude/launch.json` at `~/Desktop/.claude/launch.json`, config name `nextgo`).
+- `app/(app)/**` — authenticated shell routes (sidebar + topbar), each `page.js` is a one-liner rendering `<AppPage id="...">`.
+- `app/{login,signup,forgot-password,reset-password}` — auth routes outside the shell, render `<AuthScreen>`.
+- `lib/routes.js` — screen-id ↔ URL path map (`PATHS`, `pathFor`, `idForPath`). Screen ids are the real join key to `lib/data.js`.
+- `lib/data.js` — the entire mock dataset: `METRICS` (KPI cards), `SPINE`/`SECONDARY` (nav), `PAGES` (breadcrumb/title), `TABLES` (list-view screens: search/tabs/filters/stats/cols/rows), `FORMS` (settings/detail/wizard screens: sectioned fields + aside panels), `CONNECTORS` (channel integration cards), `ACTIONS`, `RESOLUTIONS`, `DRAWER_SCANS`, `PALETTE_GROUPS` (⌘K command palette), `WALLET_BALANCE`.
+- `components/AppPage.jsx` dispatches per screen id: has a `TABLES` entry → `TablePage`; has `FORMS`/`CONNECTORS` entry → `FormPage`; `isDashboard` → `DashboardContent`.
+- `lib/AppStateContext.jsx` — client-only UI state (nav/palette/drawer open, selected KPIs, active tab per screen, viewport width). No server state, no data fetching anywhere yet.
+
+## Backend build order (recommended)
+1. **Auth + tenancy** — nothing else is safe to build without a seller_id to scope data by.
+2. **Channels & order sync** — orders are the root entity; everything downstream (shipments, NDR, COD, invoices) derives from an order.
+3. **Rating + booking** (Ship Now, Rate Calculator/Card, Pincode Serviceability) — needs a courier-aggregator abstraction before shipments can exist.
+4. **Shipments + tracking** — courier webhook/polling ingestion, status machine.
+5. **Money** (wallet, charges, COD reconciliation, recharges, invoices/GST) — depends on shipments existing and being priced.
+6. **Exceptions** (NDR, weight disputes) — depends on shipment tracking events.
+7. **Settings** (warehouse, KYC, courier rules, label/printer, webhook, notifications, profile) — mostly independent CRUD, needed to make booking/money correct.
+8. **Reports/MIS, Marketing** — read-model aggregation + third-party sends, can come last.
+9. **Admin panel** — same entities as above but cross-tenant + approval workflows; needs RBAC (platform-admin role) first.
+
+## Entities implied by the UI
+
+**Tenancy / auth**
+- `Seller` (business entity) — legal name, GSTIN, PAN, entity type, category, registered address, plan (Starter/Growth/Enterprise), KYC status, wallet balance.
+- `User` — belongs to a seller, role (Owner/Operations/Finance/Read-only per `settings/profile` team table), email/password, sessions, sign-in history.
+- Auth flows: login, signup, forgot-password (email/OTP), reset-password, change-password. No 2FA UI shown but "2FA: Enabled" appears as a read-only stat on `settings/profile` — decide whether to build it or just display.
+
+**Channels (`channels/*`, `CONNECTORS` in data.js)**
+- `Channel` per seller: type (amazon/shopify/woocommerce/opencart/magento), connection status, external store identifier, API credentials (OAuth tokens or REST keys), sync frequency, last sync timestamp, order-count synced.
+- Needs: OAuth app registration with each platform (Amazon SP-API/MWS, Shopify Admin API, WooCommerce REST, Magento Adobe Commerce, OpenCart REST extension), webhook or polling ingestion, per-channel sync job (see Jobs below).
+
+**Orders (`orders`, `orders/b2c`, `orders/reverse`, `orders/dropshipping`, `orders/ship-now`)**
+- `Order`: id, external order ref, channel, customer (name, address, phone), line items (SKU, qty, product name), payment mode (COD/Prepaid), order value, status (New/Ready to ship/Pickup scheduled/Cancelled...), created_at.
+- Sub-types: B2C order (manual single-customer creation form), Reverse order (return pickup booking from customer address), Dropshipping order (partner storefront orders — needs a `Partner` entity: Nestasia/Pepperfry/Tata CLiQ-style partners, payout per order).
+- `Ship Now` is a 4-step booking wizard against an existing order: pickup/delivery confirm → package+payment details → courier selection (rate comparison) → charge breakdown/confirm. This is the core state machine: **Order → (rate quotes) → Shipment**.
+- Bulk import (CSV) and CSV export needed on most table screens.
+
+**Rating & serviceability (`tools/*`)**
+- `Rate Calculator`: input (pickup pincode, delivery pincode, weight, dimensions, payment mode) → output ranked list of courier quotes. Needs volumetric-vs-dead-weight billing logic (seen explicitly: "billed weight = max(dead, volumetric/divisor)").
+- `Rate Card`: seller's negotiated slab rates per courier per zone, versioned by effective date, tied to a volume tier that triggers renegotiation.
+- `Pincode Serviceability`: single lookup + bulk CSV upload (up to 50k pincodes) → per-courier serviceability matrix. Needs a maintained pincode→zone→courier-coverage reference table (refreshed from courier partner APIs).
+- Zone model: zones A–D (or similar) drive both rating and transit-time estimates.
+
+**Shipments (`shipments`, `shipments/detail`)**
+- `Shipment`: AWB (courier-assigned tracking number), order_id, courier, service type (Surface/Air/Express/Hyperlocal), route (pickup pincode → delivery pincode), chargeable weight, mode (COD/Prepaid), charge, status (Pickup pending/In transit/Out for delivery/Delivered/NDR/RTO in transit/RTO/Cancelled), promised date, attempts.
+- `ScanEvent` (tracking history): shipment_id, timestamp, location/hub, status, raw courier payload. Populated by courier webhook push or scheduled polling per courier's tracking API.
+- Manifest generation (batch label + pickup manifest per warehouse/courier) and label printing (see Settings → Label/Printer).
+
+**Exceptions**
+- `NDR` (non-delivery report): shipment_id, reason (customer unavailable/address incomplete/refused/payment not ready), attempt count (n of 3), SLA countdown to auto-RTO, status (Unactioned/Actioned/RTO), resolution action taken (reattempt with new slot / mark RTO / WhatsApp address confirmation). Needs a scheduled job that auto-converts unactioned NDRs to RTO after the SLA window.
+- `WeightDiscrepancy`: shipment_id, declared weight, courier-charged weight, difference, amount held, status (Open/Disputed/Accepted/Won), evidence (packing photos upload), dispute window deadline. Needs courier dispute-API integration or manual ops workflow, plus wallet-hold/release side effects.
+
+**Money**
+- `WalletLedger`: append-only entries (debit/credit), narration, reference, running balance. Every shipment charge, RTO charge, dispute hold/release, and recharge is a ledger entry — **this must be the single source of truth for the wallet balance shown everywhere** (topbar, dashboard, settings).
+- `Recharge`: payment gateway reference (Razorpay refs seen — `RZP-...`), method (NEFT/UPI/card/auto-recharge), amount, status (Success/Failed), auto-recharge threshold + toggle. Needs real payment gateway integration (Razorpay or similar) with webhook confirmation, not just a status flag.
+- `ShippingCharge`: per-shipment freight/COD-fee/GST breakdown line, forward vs RTO type. GST at 18% — must be computed and reconciled against `Invoice`.
+- `CODReconciliation` (payout cycle): cycle date range, shipment count, COD collected, charges deducted, net remitted, bank account, status (Pending/Remitted). Needs a scheduled payout-cycle job and bank transfer integration (NEFT/IMPS) or manual ops approval (see Admin → COD, which has an "Approve payouts" action).
+- `Invoice`: GST tax invoice per billing cycle, sequential numbering (`NX/26-27/00418` pattern — configurable prefix/series in Settings → Invoice Settings), PDF generation, filed status. Real compliance surface — GST invoice numbering/sequencing rules must be correct (no gaps, no reuse).
+
+**Marketing**
+- `Campaign` (WhatsApp/Email): template, audience segment, schedule, send stats (sent/delivered/opened/clicked). Needs WhatsApp Business API (Cloud API, template approval flow) and an email ESP (SendGrid/SES-style) integration.
+
+**Reports & MIS (`mis`)**
+- Scheduled reports (recurring, emailed to team) + on-demand generation, multiple export formats (CSV/XLSX/PDF) per report type (shipment register, order register, COD remittance, courier scorecard, NDR ageing, weight disputes, wallet ledger). This is a read-model/aggregation layer over the entities above — likely needs a job queue + file storage (S3-style) + signed download links, not synchronous generation for large exports.
+
+**Settings**
+- `Warehouse`: pickup location(s), address, contact, pickup cutoff time, reverse-pickup toggle, separate return-address toggle. One seller can have multiple; one is primary.
+- `KYC`: GSTIN/PAN verification (third-party verification API), bank account for COD remittance (penny-drop verification), document upload (cancelled cheque), signatory Aadhaar OTP verification. Real KYC compliance surface.
+- `CourierRules`: allocation strategy config (default = cheapest serviceable, fallback = highest delivery rate) — an ordered rule engine, not just two dropdowns; "4 of 6 rules active" implies a rule list with enable/disable + reordering.
+- `Label` / `Printer` settings: label size/format, printer profiles, integration with a locally-running "print helper" desktop agent (v2.4.1 mentioned) — this is a separate local service, not a web backend concern, but the web app needs to detect/communicate with it.
+- `InvoiceSettings`: tax invoice numbering series and defaults.
+- `Webhook`: outbound webhook endpoint + secret, subscribed event types, delivery log (success/fail counts, latency, retries). Needs an outbound webhook dispatcher with retry/backoff and a delivery-log table.
+- `Notifications`: per-event toggle matrix (which customer-facing and internal-team alerts fire on which channel).
+- `Profile`: account/business details, team members + roles (RBAC), recent sign-ins (session/device log).
+
+**Admin panel (`admin/*`)** — platform-operator view, cross-tenant:
+- `a-overview` / `a-sellers`: all sellers, plan, shipment volume, wallet float, KYC/status, platform GMV. Needs seller suspend/activate actions.
+- `a-shipments` / `a-ndr`: platform-wide versions of the seller tables, filterable by seller.
+- `a-couriers`: courier partner config — service types, pincode coverage, live SLA/uptime metrics, health status (Healthy/Degraded/Suspended), rate-card sync, "+ Add courier" onboarding.
+- `a-cod`: cross-seller payout approval queue ("Approve payouts" action — this is where real money moves out, needs strong authz + audit trail).
+- `a-jobs`: background job run history (channel sync, courier scan pull, manifest generation, COD reconciliation, weight-discrepancy import, webhook delivery, invoice generation) with status (Running/Success/Failed/Queued), retry action, duration, record counts. **This view implies the backend itself is job/queue-driven** (e.g. BullMQ/Sidekiq-style) — worth building the job system early since almost every module above (sync, tracking, payouts, invoices, exports) is async by nature.
+
+## Cross-cutting concerns
+- **Multi-tenancy**: every table above except courier/platform config is scoped by `seller_id`. Get row-level scoping right before building features on top.
+- **RBAC**: seller-level roles (Owner/Operations/Finance/Read-only) seen in `settings/profile`; platform-level admin role for `/admin/*`. Two separate authz layers.
+- **Courier aggregation**: a single internal interface (`quote(origin, dest, weight, dims, mode) -> [ratedQuotes]`, `book(shipmentDraft) -> awb`, `track(awb) -> events[]`, `cancel(awb)`) behind which real Delhivery/Blue Dart/Ekart/XpressBees/Ecom Express/Shadowfax APIs get plugged in one at a time. Build against a fake/mock courier adapter first so the rest of the stack doesn't wait on partner API access.
+- **Payment gateway**: recharges need Razorpay (or similar) checkout + webhook; COD payouts need a bank transfer rail (NEFT/IMPS) or manual-approval-then-external-transfer flow.
+- **Notification providers**: WhatsApp Cloud API, an SMS DLT-registered provider (MSG91-style, seen in mock data), an email ESP.
+- **Compliance**: GST invoice sequencing, GSTIN/PAN verification, KYC document handling — treat as real compliance surfaces even in early builds, not mock-able forever.
+- **File storage + exports**: label PDFs, manifests, invoice PDFs, dispute evidence photos, bulk CSV imports/exports — needs object storage + async job + signed URLs.
+- **Command palette (`⌘K`)**: cross-entity search (shipments, orders by AWB/customer) + fuzzy action list — needs a search index (Postgres full-text or a dedicated search service) once data is real, not just a static list.
+
+## Motion system (apple-design pass, 2026-09-05)
+The app-shell chrome (Sidebar, TopBar, CommandPalette, KpiDropdown, NdrDrawer, MobileOverlay) uses the `motion` package (`motion/react`) applying Apple's fluid-interface rules from the `apple-design` skill:
+- **NdrDrawer** is the flagship: a real drag-to-dismiss sheet — 1:1 tracking via a left-edge grab handle (`useDragControls`, `dragListener={false}` so it doesn't fight the scrollable content), rubber-band resistance past the open position (`dragElastic`), and the release velocity is handed off into the exit spring so a fast flick keeps its momentum. Dismisses to the same right edge it entered from.
+- **Mobile Sidebar** mirrors the same pattern (drag left to dismiss, rubber-band at both travel limits), replacing the old fixed-duration CSS transition.
+- **CommandPalette / KpiDropdown** use spring scale-in anchored to their trigger (`transformOrigin`), critically damped (no bounce — they open from a click, not a gesture with momentum).
+- All scrims/panels use `backdrop-filter: blur()` for translucency, with `lib/useReducedTransparency.js` (`prefers-reduced-transparency`) falling back to a near-solid background.
+- Every mount/exit respects `useReducedMotion()` — reduced-motion users get opacity cross-fades instead of slides/springs.
+- Primary buttons use `whileTap` for instant press feedback (fires on pointer-down, not release).
+- **Not yet covered**: the many plain `onClick` divs across `TablePage`/`FormPage`/individual page content — same `whileTap` pattern should be applied there as those get touched.
+
+## Working agreement
+- This file is the source of truth for backend scope — **update it every session** as decisions get made or the mock data model changes, the same pattern used in `ai-technical-decomposer`.
+- Frontend stays mock-data-driven until the backend build actually starts; don't wire up partial fetches that half-break the demo.
