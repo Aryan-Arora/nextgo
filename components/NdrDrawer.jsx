@@ -87,28 +87,29 @@ export default function NdrDrawer() {
                 <div style={{ fontFamily: T.MONO, fontSize: 19, fontWeight: 500, letterSpacing: '-.02em', marginTop: 7 }}>2839471056283</div>
                 <div style={{ fontSize: 12, color: T.TEXT_MUTED, marginTop: 5 }}>Rohit Menon · Bengaluru 560102 · COD ₹2,480</div>
               </div>
-              <motion.div whileTap={TAP} transition={TAP_TRANSITION} onClick={close} style={{ width: 28, height: 28, flex: '0 0 28px', border: `1px solid ${T.INPUT_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: T.TEXT_SECONDARY, cursor: 'pointer' }}>✕</motion.div>
+              <motion.div whileHover={{ background: 'var(--nx-surface-soft)' }} whileTap={TAP} transition={TAP_TRANSITION} onClick={close} style={{ width: 28, height: 28, flex: '0 0 28px', borderRadius: 8, border: `1px solid ${T.INPUT_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: T.TEXT_SECONDARY, cursor: 'pointer' }}>✕</motion.div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px 22px 30px' }}>
-              <div style={{ background: '#FDF6E6', border: '1px solid #E5D3A8', padding: '13px 15px' }}>
+              <div style={{ background: '#FDF6E6', border: '1px solid #E5D3A8', borderRadius: 10, padding: '13px 15px' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#6B5416' }}>Courier reason: customer unavailable</div>
                 <div style={{ fontSize: 11.5, color: '#6B5416', marginTop: 6, lineHeight: 1.6 }}>Ecom Express attempted delivery at 13:22 today. Auto-reattempt stops after 24 hours, then the shipment converts to RTO.</div>
               </div>
               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: T.TEXT_FAINT, marginTop: 20 }}>Choose a resolution</div>
-              <div style={{ marginTop: 10 }}>
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {RESOLUTIONS.map(([label, cost, sub], i) => {
                   const on = resolution === i;
                   return (
                     <motion.div
                       key={i}
+                      whileHover={on ? {} : { y: -1, boxShadow: '0 1px 1px rgba(15,23,20,.05), 0 6px 14px rgba(15,23,20,.08)' }}
                       whileTap={TAP}
                       transition={TAP_TRANSITION}
                       onClick={() => setResolution(i)}
-                      style={{ border: `1px solid ${on ? T.ACCENT : T.BORDER}`, background: on ? 'rgba(0,179,164,.1)' : T.SURFACE, padding: '12px 14px', cursor: 'pointer', marginBottom: 8 }}
+                      style={{ borderRadius: 10, border: `1px solid ${on ? T.ACCENT : T.BORDER}`, background: on ? 'rgba(0,179,164,.1)' : T.SURFACE, padding: '12px 14px', cursor: 'pointer' }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 14, height: 14, border: `1.5px solid ${on ? T.ACCENT : T.MENU_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <div style={{ width: 7, height: 7, background: on ? T.ACCENT : 'transparent' }} />
+                        <div style={{ width: 14, height: 14, borderRadius: '50%', border: `1.5px solid ${on ? T.ACCENT : T.MENU_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: on ? T.ACCENT : 'transparent' }} />
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 600 }}>{label}</div>
                         <div style={{ marginLeft: 'auto', fontFamily: T.MONO, fontSize: 11, color: T.TEXT_SECONDARY }}>{cost}</div>
@@ -119,9 +120,9 @@ export default function NdrDrawer() {
                 })}
               </div>
               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: T.TEXT_FAINT, marginTop: 20 }}>Last scans</div>
-              <div style={{ marginTop: 8, border: `1px solid ${T.BORDER}`, background: T.SURFACE }}>
+              <div style={{ marginTop: 8, borderRadius: 10, border: `1px solid ${T.BORDER}`, background: T.SURFACE, overflow: 'hidden' }}>
                 {DRAWER_SCANS.map((t, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 14, padding: '10px 13px', borderBottom: `1px solid ${T.ROW_DIVIDER}` }}>
+                  <div key={i} style={{ display: 'flex', gap: 14, padding: '10px 13px', borderBottom: i < DRAWER_SCANS.length - 1 ? `1px solid ${T.ROW_DIVIDER}` : 'none' }}>
                     <div style={{ fontFamily: T.MONO, fontSize: 10, color: T.TEXT_FAINT, flex: '0 0 90px' }}>{t.time}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 500 }}>{t.title}</div>
@@ -132,10 +133,10 @@ export default function NdrDrawer() {
               </div>
             </div>
             <div style={{ padding: '13px 20px 13px 30px', borderTop: `1px solid ${T.BORDER}`, background: T.SURFACE, display: 'flex', alignItems: 'center', gap: 9 }}>
-              <motion.div whileTap={TAP} transition={TAP_TRANSITION} onClick={close} style={{ height: 36, padding: '0 14px', border: `1px solid ${T.INPUT_BORDER}`, display: 'flex', alignItems: 'center', fontSize: 12.5, cursor: 'pointer' }}>Cancel</motion.div>
+              <motion.div whileHover={{ background: 'var(--nx-surface-soft)' }} whileTap={TAP} transition={TAP_TRANSITION} onClick={close} style={{ height: 36, padding: '0 14px', borderRadius: 8, border: `1px solid ${T.INPUT_BORDER}`, display: 'flex', alignItems: 'center', fontSize: 12.5, cursor: 'pointer' }}>Cancel</motion.div>
               <div style={{ fontFamily: T.MONO, fontSize: 10, color: T.TEXT_FAINT, marginLeft: 6 }}>ENTER TO SUBMIT</div>
               <div style={{ flex: 1 }} />
-              <motion.div whileTap={TAP} transition={TAP_TRANSITION} onClick={close} style={{ height: 36, padding: '0 16px', background: T.ACCENT, color: '#06272B', display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Submit resolution</motion.div>
+              <motion.div whileTap={TAP} transition={TAP_TRANSITION} onClick={close} style={{ height: 36, padding: '0 16px', borderRadius: 8, background: T.ACCENT, color: '#06272B', display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', boxShadow: '0 6px 16px rgba(0,179,164,.28)' }}>Submit resolution</motion.div>
             </div>
           </motion.div>
         </div>

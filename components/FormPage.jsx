@@ -3,12 +3,15 @@
 import { motion } from 'motion/react';
 import { FORMS, CONNECTORS } from '@/lib/data';
 import * as T from '@/lib/theme';
+import ScenicBackdrop from './ScenicBackdrop';
 
 const CARD = {
-  background: 'linear-gradient(165deg, var(--nx-card-sheen-1) 0%, var(--nx-card-sheen-2) 100%)',
-  border: `1px solid ${T.BORDER}`,
+  position: 'relative',
+  background: 'linear-gradient(165deg, var(--nx-glass-1) 0%, var(--nx-glass-2) 100%)',
+  backdropFilter: 'blur(18px) saturate(180%)',
+  border: '1px solid var(--nx-glass-border)',
   borderRadius: 12,
-  boxShadow: '0 1px 1px rgba(23,22,19,.04), 0 8px 24px rgba(23,22,19,.06)',
+  boxShadow: '0 1px 1px rgba(15,23,20,.05), 0 10px 28px rgba(15,23,20,.10)',
 };
 const TAP = { scale: 0.97 };
 const TAP_FAST = { duration: 0.08 };
@@ -65,8 +68,9 @@ export default function FormPage({ activeId, mobile }) {
   const formCols = mobile ? '1fr' : form.cols;
 
   return (
-    <div style={{ flex: 1, padding: '20px 22px 48px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: formCols, gap: 20, alignItems: 'start' }}>
+    <div style={{ flex: 1, padding: '20px 22px 48px', position: 'relative' }}>
+      <ScenicBackdrop />
+      <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: formCols, gap: 20, alignItems: 'start' }}>
         <div>
           {form.sections.map((sec, si) => (
             <div key={si} style={{ ...CARD, marginBottom: 20, overflow: 'hidden' }}>
@@ -81,7 +85,7 @@ export default function FormPage({ activeId, mobile }) {
                   const on = kind === 'g';
                   const label = f[1], value = f[2], span = mobile ? 'span 1' : f[3], hint = f[4] || '', suffix = f[5] || '';
                   const font = suffix === '₹' || suffix === 'kg' || suffix === 'cm' ? T.MONO : T.SANS;
-                  const color = value === '—' || value === 'Not serviceable' ? T.TEXT_FAINT : T.TEXT;
+                  const color = value === 'N/A' || value === 'Not serviceable' ? T.TEXT_FAINT : T.TEXT;
                   return (
                     <div key={fi} style={{ gridColumn: span }}>
                       {isToggle ? (
@@ -107,7 +111,7 @@ export default function FormPage({ activeId, mobile }) {
                 })}
               </div>
               {sec.footer && (
-                <div style={{ padding: '12px 18px', background: T.SURFACE_SOFT, borderTop: `1px solid ${T.DIVIDER}`, display: 'flex', alignItems: 'center', gap: 9 }}>
+                <div style={{ padding: '12px 18px', background: 'transparent', borderTop: `1px solid ${T.DIVIDER}`, display: 'flex', alignItems: 'center', gap: 9 }}>
                   <div style={{ fontSize: 12.5, color: T.TEXT_MUTED }}>{sec.footer}</div>
                   <motion.div whileTap={TAP} transition={TAP_FAST} className="nxc-btn" style={{ marginLeft: 'auto', height: 32, padding: '0 13px', borderRadius: 7, border: `1px solid ${T.INPUT_BORDER}`, background: T.SURFACE, display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Discard</motion.div>
                   <motion.div whileTap={TAP} transition={TAP_FAST} style={{ height: 32, padding: '0 15px', borderRadius: 7, background: T.NAVY, color: '#fff', display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', boxShadow: '0 6px 16px rgba(15,31,61,.22)' }}>Save changes</motion.div>

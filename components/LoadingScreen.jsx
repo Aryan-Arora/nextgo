@@ -54,11 +54,15 @@ function sampleWordmark() {
     const [x, y] = candidates[Math.floor(k * step)];
     points.push([x - cx0, y - cy0]);
   }
-  return { points, textW, textH };
+  // Anchor point for redrawing the wordmark as one solid glyph in the same
+  // coordinate space as the particles, so the final frame can be a real
+  // filled shape instead of a field of dots pretending to be one.
+  const anchorX = cw / 2 - cx0, anchorY = ch / 2 + 8 - cy0;
+  return { points, textW, textH, anchorX, anchorY, fontPx: 190 };
 }
 
 function buildParticles() {
-  const { points, textW, textH } = sampleWordmark();
+  const { points, textW, textH, anchorX, anchorY, fontPx } = sampleWordmark();
   const particles = points.map((base, i) => {
     const seed = hash(i + 1), q = hash(i + 91);
     const tone = seed < 0.55 ? BRIGHT_TONES[Math.floor(hash(i + 4) * BRIGHT_TONES.length)]
@@ -101,7 +105,7 @@ function buildParticles() {
     if (bestJ >= 0) edges.push([i, bestJ]);
   });
 
-  return { particles, edges, textW, textH };
+  return { particles, edges, textW, textH, anchorX, anchorY, fontPx };
 }
 
 export default function LoadingScreen({ onFinish }) {
@@ -114,7 +118,7 @@ export default function LoadingScreen({ onFinish }) {
     const host = hostRef.current, canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const { particles, edges, textW, textH } = buildParticles();
+    const { particles, edges, textW, textH, anchorX, anchorY, fontPx } = buildParticles();
 
     let width = 1, height = 1, ratio = 1, raf;
     let fadingStarted = false;
@@ -201,13 +205,36 @@ export default function LoadingScreen({ onFinish }) {
         }
       }
 
+      // Solid reveal: once the particles have mostly converged, cross-fade
+      // to an actual filled wordmark drawn in the same spot, so the final
+      // resting frame is one clean solid glyph rather than a dot pattern.
+      const solid = smooth(clamp((progress - 0.8) / 0.2));
+
       for (const p of particles) {
         const proj = projected.get(p); if (!proj) continue;
-        ctx.globalAlpha = proj.alpha;
+        ctx.globalAlpha = proj.alpha * (1 - solid * 0.94);
         ctx.fillStyle = proj.scanBoost > 0.3 ? '#FFFFFF' : p.color;
         ctx.beginPath(); ctx.arc(proj.x, proj.y, p.size * (1 + proj.scanBoost * 0.5), 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
+
+      if (solid > 0.01) {
+        const tx = cx + anchorX * scale, ty = cy + anchorY * scale;
+        ctx.save();
+        ctx.globalAlpha = solid;
+        ctx.font = `900 ${fontPx * scale}px "Arial Black", Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const grad = ctx.createLinearGradient(tx - (textW * scale) / 2, 0, tx + (textW * scale) / 2, 0);
+        grad.addColorStop(0, '#3FD1C4');
+        grad.addColorStop(0.5, '#FFFFFF');
+        grad.addColorStop(1, '#3FD1C4');
+        ctx.shadowColor = 'rgba(63,209,196,.55)';
+        ctx.shadowBlur = 24 * scale;
+        ctx.fillStyle = grad;
+        ctx.fillText(WORD, tx, ty);
+        ctx.restore();
+      }
 
       if (elapsed > ASSEMBLE + HOLD && !fadingStarted) {
         fadingStarted = true;

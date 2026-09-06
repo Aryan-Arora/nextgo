@@ -45,7 +45,7 @@ export default function PageHeader({ activeId, isDashboard, mobile }) {
 
   const headline = isAdmin
     ? '1,284 sellers on the platform. 93.8% blended delivery rate, and 18,642 shipments carry an open exception.'
-    : '12,480 orders this cycle, 94.6% delivered — and 158 shipments need a decision today.';
+    : '12,480 orders this cycle, 94.6% delivered, and 158 shipments need a decision today.';
 
   return (
     <div style={{ background: T.PANEL, borderBottom: `1px solid ${T.BORDER}`, padding: '18px 22px 0', position: 'sticky', top: 52, zIndex: 30 }}>

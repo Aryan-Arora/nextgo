@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { METRICS, PIPELINE, QUEUE, TREND_A, TREND_B, COURIER_PERF } from '@/lib/data';
 import { spark } from '@/lib/charts';
 import { useAppState } from '@/lib/AppStateContext';
@@ -66,24 +67,42 @@ export default function DashboardContent({ mobile, narrow }) {
             </div>
             <div style={{ fontSize: 11.5, fontWeight: 600, color: '#0E5049', cursor: 'pointer' }}>Open in MIS →</div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: pipeCols }}>
-            {PIPELINE.map(([label, count, color]) => (
-              <div
-                key={label}
-                onClick={() => setStage(label)}
-                style={{ borderRight: `1px solid ${T.DIVIDER}`, padding: '0 0 14px', cursor: 'pointer', background: stage === label ? 'rgba(0,179,164,.12)' : 'transparent' }}
-              >
-                <div style={{ height: 3, background: color }} />
-                <div style={{ padding: '12px 14px 0' }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', color: T.TEXT_SECONDARY, lineHeight: 1.3, minHeight: 26 }}>{label}</div>
-                  <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 21, fontWeight: 600, letterSpacing: '-.015em', marginTop: 6 }}>{count.toLocaleString('en-IN')}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                    <div style={{ flex: 1, height: 2, background: T.DIVIDER }}><div style={{ height: 2, background: color, width: `${(count / total) * 100}%` }} /></div>
-                    <div style={{ fontFamily: T.MONO, fontSize: 10, color: T.TEXT_MUTED }}>{((count / total) * 100).toFixed(1)}%</div>
+          <div style={{ display: 'grid', gridTemplateColumns: pipeCols, gap: 10, padding: 14 }}>
+            {PIPELINE.map(([label, count, color]) => {
+              const on = stage === label;
+              const pct = (count / total) * 100;
+              return (
+                <motion.div
+                  key={label}
+                  onClick={() => setStage(label)}
+                  whileHover={{ y: -3, boxShadow: `0 1px 1px rgba(15,23,20,.06), 0 10px 22px rgba(15,23,20,.12), 0 2px 8px ${color}2E` }}
+                  whileTap={{ scale: 0.972 }}
+                  transition={{ type: 'spring', bounce: 0, duration: 0.28 }}
+                  style={{
+                    position: 'relative',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    borderRadius: 11,
+                    padding: '13px 14px 14px',
+                    background: on ? `${color}14` : 'var(--nx-surface)',
+                    border: `1px solid ${on ? color : 'var(--nx-border)'}`,
+                    boxShadow: on ? `0 1px 1px rgba(15,23,20,.05), 0 6px 16px ${color}22` : '0 1px 1px rgba(15,23,20,.03)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: 4, background: color, flex: '0 0 7px' }} />
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: on ? color : T.TEXT_SECONDARY, lineHeight: 1.3 }}>{label}</div>
                   </div>
-                </div>
-              </div>
-            ))}
+                  <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 22, fontWeight: 650, letterSpacing: '-.02em', marginTop: 10, color: T.TEXT }}>{count.toLocaleString('en-IN')}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 10 }}>
+                    <div style={{ flex: 1, height: 4, background: 'var(--nx-divider)', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: color, width: `${pct}%`, borderRadius: 3 }} />
+                    </div>
+                    <div style={{ fontFamily: T.MONO, fontSize: 10, color: T.TEXT_MUTED, flex: '0 0 auto' }}>{pct.toFixed(1)}%</div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
 
@@ -109,60 +128,74 @@ export default function DashboardContent({ mobile, narrow }) {
               })}
             </div>
           </div>
-          {QUEUE.map(([n, title, sub, id, sla, key, cta, primary, secondaryLabel, rows, rec]) => {
-            const open = expanded === id;
-            const color = id === 'ndr' ? T.AMBER : id === 'weight' ? T.RED : id === 'pickup' ? '#2A4570' : T.GREEN;
-            const chipBd = id === 'ndr' ? '#E5D3A8' : id === 'weight' ? '#E8C4BD' : id === 'pickup' ? '#C6D2E6' : '#BDDCC9';
-            return (
-              <div key={id}>
-                <div
-                  onClick={() => toggleExpanded(id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 15, padding: '0 18px', height: 56, borderBottom: `1px solid ${T.ROW_DIVIDER}`, cursor: 'pointer', background: open ? 'rgba(0,179,164,.08)' : 'transparent' }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 14 }}>
+            {QUEUE.map(([n, title, sub, id, sla, key, cta, primary, secondaryLabel, rows, rec]) => {
+              const open = expanded === id;
+              const color = id === 'ndr' ? T.AMBER : id === 'weight' ? T.RED : id === 'pickup' ? '#2A4570' : T.GREEN;
+              const chipBd = id === 'ndr' ? '#E5D3A8' : id === 'weight' ? '#E8C4BD' : id === 'pickup' ? '#C6D2E6' : '#BDDCC9';
+              return (
+                <motion.div
+                  key={id}
+                  layout
+                  transition={{ type: 'spring', bounce: 0, duration: 0.32 }}
+                  style={{
+                    borderRadius: 11,
+                    border: `1px solid ${open ? color : 'var(--nx-border)'}`,
+                    background: open ? `${color}0D` : 'var(--nx-surface)',
+                    overflow: 'hidden',
+                  }}
                 >
-                  <div style={{ fontSize: 10.5, color: T.TEXT_FAINT, width: 8, transform: open ? 'rotate(90deg)' : 'none' }}>▸</div>
-                  <div style={{ width: 3, height: 28, background: color }} />
-                  <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, fontWeight: 600, width: 58 }}>{n}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
-                    <div style={{ fontSize: 12, color: T.TEXT_MUTED, marginTop: 2 }}>{sub}</div>
-                  </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: 11, fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', color, border: `1px solid ${chipBd}`, padding: '2px 6px' }}>{sla}</div>
-                  <div style={{ fontFamily: T.MONO, fontSize: 10, color: T.TEXT_SECONDARY, border: `1px solid ${T.INPUT_BORDER}`, padding: '2px 5px' }}>{key}</div>
-                  <div
-                    onClick={(e) => { e.stopPropagation(); setDrawerOpen(true); }}
-                    style={{ fontSize: 11.5, fontWeight: 600, color: '#0E5049' }}
+                  <motion.div
+                    onClick={() => toggleExpanded(id)}
+                    whileHover={open ? {} : { y: -2, boxShadow: `0 1px 1px rgba(15,23,20,.05), 0 8px 18px rgba(15,23,20,.08)` }}
+                    transition={{ type: 'spring', bounce: 0, duration: 0.24 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 15, padding: '0 16px', height: 58, cursor: 'pointer' }}
                   >
-                    {cta} →
-                  </div>
-                </div>
-                {open && (
-                  <div style={{ background: T.SURFACE_SOFT, borderBottom: `1px solid ${T.DIVIDER}`, padding: '18px 18px 20px 62px', animation: 'nxc-expand .14s ease-out' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '340px 1fr', gap: 22 }}>
-                      <div>
-                        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: T.TEXT_FAINT }}>Breakdown</div>
-                        <div style={{ marginTop: 10, background: T.SURFACE, border: `1px solid ${T.BORDER}` }}>
-                          {rows.map(([k, v], i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', borderBottom: `1px solid ${T.ROW_DIVIDER}`, fontSize: 12 }}>
-                              <div style={{ color: T.TEXT_LABEL }}>{k}</div>
-                              <div style={{ fontFamily: T.MONO }}>{v}</div>
-                            </div>
-                          ))}
+                    <div style={{ fontSize: 10.5, color: T.TEXT_FAINT, width: 8, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .18s ease' }}>▸</div>
+                    <div style={{ width: 3, height: 28, borderRadius: 2, background: color }} />
+                    <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, fontWeight: 600, width: 58 }}>{n}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
+                      <div style={{ fontSize: 12, color: T.TEXT_MUTED, marginTop: 2 }}>{sub}</div>
+                    </div>
+                    <div style={{ fontFamily: T.MONO, fontSize: 11, fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', color, border: `1px solid ${chipBd}`, borderRadius: 20, padding: '2px 8px' }}>{sla}</div>
+                    <div style={{ fontFamily: T.MONO, fontSize: 10, color: T.TEXT_SECONDARY, border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 5, padding: '2px 5px' }}>{key}</div>
+                    <div
+                      onClick={(e) => { e.stopPropagation(); setDrawerOpen(true); }}
+                      style={{ fontSize: 11.5, fontWeight: 600, color: '#0E5049' }}
+                    >
+                      {cta} →
+                    </div>
+                  </motion.div>
+                  {open && (
+                    <div style={{ borderTop: `1px solid ${open ? `${color}33` : T.DIVIDER}`, padding: '18px 18px 20px 62px', animation: 'nxc-expand .14s ease-out' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '340px 1fr', gap: 22 }}>
+                        <div>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: T.TEXT_FAINT }}>Breakdown</div>
+                          <div style={{ marginTop: 10, background: T.SURFACE, border: `1px solid ${T.BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+                            {rows.map(([k, v], i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', borderBottom: `1px solid ${T.ROW_DIVIDER}`, fontSize: 12 }}>
+                                <div style={{ color: T.TEXT_LABEL }}>{k}</div>
+                                <div style={{ fontFamily: T.MONO }}>{v}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: T.TEXT_FAINT }}>Recommended action</div>
-                        <div style={{ fontSize: 12.5, color: T.TEXT_LABEL, marginTop: 10, lineHeight: 1.65, maxWidth: 520 }}>{rec}</div>
-                        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                          <div onClick={() => setDrawerOpen(true)} style={{ height: 32, padding: '0 13px', background: T.NAVY, color: '#fff', display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>{primary}</div>
-                          <div style={{ height: 32, padding: '0 13px', border: `1px solid ${T.INPUT_BORDER}`, background: T.SURFACE, display: 'flex', alignItems: 'center', fontSize: 12.5, cursor: 'pointer' }}>{secondaryLabel}</div>
+                        <div>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: T.TEXT_FAINT }}>Recommended action</div>
+                          <div style={{ fontSize: 12.5, color: T.TEXT_LABEL, marginTop: 10, lineHeight: 1.65, maxWidth: 520 }}>{rec}</div>
+                          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                            <div onClick={() => setDrawerOpen(true)} style={{ height: 32, padding: '0 13px', borderRadius: 7, background: T.NAVY, color: '#fff', display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>{primary}</div>
+                            <div style={{ height: 32, padding: '0 13px', borderRadius: 7, border: `1px solid ${T.INPUT_BORDER}`, background: T.SURFACE, display: 'flex', alignItems: 'center', fontSize: 12.5, cursor: 'pointer' }}>{secondaryLabel}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: chartCols, gap: 20, marginTop: 20 }}>

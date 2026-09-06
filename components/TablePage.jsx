@@ -6,12 +6,15 @@ import { useAppState } from '@/lib/AppStateContext';
 import { optionsFor } from '@/lib/filterOptions';
 import * as T from '@/lib/theme';
 import FilterDropdown from './FilterDropdown';
+import ScenicBackdrop from './ScenicBackdrop';
 
 const CARD = {
-  background: 'linear-gradient(165deg, var(--nx-card-sheen-1) 0%, var(--nx-card-sheen-2) 100%)',
-  border: `1px solid ${T.BORDER}`,
+  position: 'relative',
+  background: 'linear-gradient(165deg, var(--nx-glass-1) 0%, var(--nx-glass-2) 100%)',
+  backdropFilter: 'blur(18px) saturate(180%)',
+  border: '1px solid var(--nx-glass-border)',
   borderRadius: 12,
-  boxShadow: '0 1px 1px rgba(23,22,19,.04), 0 8px 24px rgba(23,22,19,.06)',
+  boxShadow: '0 1px 1px rgba(15,23,20,.05), 0 10px 28px rgba(15,23,20,.10)',
 };
 const TAP = { scale: 0.97 };
 const TAP_FAST = { duration: 0.08 };
@@ -51,7 +54,9 @@ export default function TablePage({ activeId, mobile }) {
   const miniCols = mobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
 
   return (
-    <div style={{ flex: 1, padding: '20px 22px 48px' }}>
+    <div style={{ flex: 1, padding: '20px 22px 48px', position: 'relative' }}>
+      <ScenicBackdrop />
+      <div style={{ position: 'relative', zIndex: 1 }}>
       {t.stats && (
         <div style={{ ...CARD, display: 'grid', gridTemplateColumns: miniCols, marginBottom: 20, overflow: 'hidden' }}>
           {t.stats.map(([label, value, delta, dir, sub], i) => (
@@ -106,7 +111,7 @@ export default function TablePage({ activeId, mobile }) {
             })}
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', background: T.SURFACE_SOFT, borderBottom: `1px solid ${T.DIVIDER}`, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', background: 'transparent', borderBottom: `1px solid ${T.DIVIDER}`, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, height: 32, background: T.SURFACE, border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, padding: '0 11px', minWidth: 250, color: T.TEXT_MUTED, fontSize: 13 }}>
             <div style={{ width: 11, height: 11, border: '1.5px solid #A8A395', borderRadius: '50%' }} />{t.search}
           </div>
@@ -128,7 +133,7 @@ export default function TablePage({ activeId, mobile }) {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: t.min }}>
             <thead>
-              <tr style={{ background: T.SURFACE_SOFT }}>
+              <tr style={{ background: 'transparent' }}>
                 {t.cols.map(([label, align]) => (
                   <th key={label + align} style={{ padding: '9px 14px', textAlign: align, fontSize: 10.5, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: T.TABLE_HEAD, borderBottom: `1px solid ${T.BORDER}`, whiteSpace: 'nowrap' }}>{label}</th>
                 ))}
@@ -169,7 +174,7 @@ export default function TablePage({ activeId, mobile }) {
             </tbody>
           </table>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', background: T.SURFACE_SOFT, borderTop: `1px solid ${T.DIVIDER}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', background: 'transparent', borderTop: `1px solid ${T.DIVIDER}` }}>
           <div style={{ fontSize: 12.5, color: T.TEXT_SECONDARY }}>{t.count}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <motion.div whileTap={TAP} transition={TAP_FAST} className="nxc-btn" style={{ height: 29, padding: '0 10px', display: 'flex', alignItems: 'center', border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, background: T.SURFACE, fontSize: 12.5, color: T.TEXT_FAINT, cursor: 'pointer' }}>Prev</motion.div>
@@ -179,6 +184,7 @@ export default function TablePage({ activeId, mobile }) {
             <motion.div whileTap={TAP} transition={TAP_FAST} className="nxc-btn" style={{ height: 29, padding: '0 10px', display: 'flex', alignItems: 'center', border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, background: T.SURFACE, fontSize: 12.5, cursor: 'pointer' }}>Next</motion.div>
           </div>
         </div>
+      </div>
       </div>
       <style jsx>{`
         .nxc-btn { transition: background 100ms ease-out, border-color 100ms ease-out; }

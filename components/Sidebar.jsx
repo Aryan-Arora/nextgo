@@ -69,14 +69,15 @@ export default function Sidebar({ activeId, mobile }) {
       </motion.div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ padding: '10px 0 2px' }}>
+        <div style={{ padding: '10px 8px 2px' }}>
           <motion.div
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.1 }}
             onClick={() => nav('dashboard')}
-            style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '9px 18px', margin: '0 8px', cursor: 'pointer', background: onDashboard ? 'rgba(0,179,164,.15)' : 'transparent' }}
+            className="nxc-nav-row"
+            style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '9px 10px', borderRadius: 9, cursor: 'pointer', background: onDashboard ? 'rgba(0,179,164,.15)' : undefined }}
           >
-            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: onDashboard ? T.ACCENT : 'transparent' }} />
+            <div style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: onDashboard ? T.ACCENT : 'transparent' }} />
             <div style={{ width: 8, height: 8, borderRadius: 2, background: onDashboard ? T.ACCENT : '#3A5178' }} />
             <div style={{ fontSize: 14.5, fontWeight: onDashboard ? 600 : 500, color: onDashboard ? '#fff' : '#C7D2E2', letterSpacing: '-.005em' }}>Dashboard</div>
           </motion.div>
@@ -86,14 +87,15 @@ export default function Sidebar({ activeId, mobile }) {
         {SPINE.map(([id, label, count, sub, dest, kids], i) => {
           const on = kids.some((k) => k[1] === activeId) || dest === activeId;
           return (
-            <div key={id}>
+            <div key={id} style={{ padding: '2px 8px 0' }}>
               <div
                 onClick={() => nav(dest)}
-                style={{ position: 'relative', display: 'flex', gap: 12, padding: '11px 18px', cursor: 'pointer', background: on ? 'rgba(0,179,164,.15)' : 'transparent', borderTop: '1px solid rgba(255,255,255,.05)' }}
+                className="nxc-nav-row"
+                style={{ position: 'relative', display: 'flex', gap: 12, padding: '9px 10px', borderRadius: 9, cursor: 'pointer', background: on ? 'rgba(0,179,164,.15)' : undefined }}
               >
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: on ? T.ACCENT : 'transparent' }} />
+                <div style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: on ? T.ACCENT : 'transparent' }} />
                 <div style={{ flex: '0 0 9px', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 4 }}>
-                  <div style={{ width: 8, height: 8, background: on ? T.ACCENT : '#3A5178' }} />
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: on ? T.ACCENT : '#3A5178' }} />
                   <div style={{ flex: 1, width: 1, background: 'rgba(255,255,255,.13)', marginTop: 3, minHeight: i === SPINE.length - 1 ? 0 : 12 }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0, paddingBottom: 3 }}>
@@ -110,7 +112,8 @@ export default function Sidebar({ activeId, mobile }) {
                     <div
                       key={d}
                       onClick={() => nav(d)}
-                      style={{ padding: '8px 18px 8px 39px', fontSize: 13.5, fontWeight: d === activeId ? 600 : 400, color: d === activeId ? '#fff' : '#A7B7CE', background: d === activeId ? 'rgba(255,255,255,.09)' : 'transparent', cursor: 'pointer' }}
+                      className="nxc-nav-row"
+                      style={{ padding: '8px 10px 8px 31px', borderRadius: 8, margin: '1px 0', fontSize: 13.5, fontWeight: d === activeId ? 600 : 400, color: d === activeId ? '#fff' : '#A7B7CE', background: d === activeId ? 'rgba(255,255,255,.09)' : undefined, cursor: 'pointer' }}
                     >
                       {l}
                     </div>
@@ -121,18 +124,19 @@ export default function Sidebar({ activeId, mobile }) {
           );
         })}
 
-        <div style={{ height: 1, background: 'rgba(255,255,255,.1)', margin: '12px 0 0' }} />
+        <div style={{ height: 1, background: 'rgba(255,255,255,.1)', margin: '12px 12px 6px' }} />
 
         {SECONDARY.map(([label, items]) => {
           const has = items.some((it) => it[1] === activeId);
           const open = openGroups[label] === undefined ? has : !!openGroups[label];
           return (
-            <div key={label} style={{ borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+            <div key={label} style={{ padding: '0 8px' }}>
               <div
                 onClick={() => toggleGroup(label, has)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 18px', cursor: 'pointer', color: T.SIDEBAR_TEXT, fontSize: 14, fontWeight: 500 }}
+                className="nxc-nav-row"
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 10px', borderRadius: 9, cursor: 'pointer', color: T.SIDEBAR_TEXT, fontSize: 14, fontWeight: 500 }}
               >
-                <div style={{ fontSize: 8, color: T.SIDEBAR_MUTED, width: 7, transform: open ? 'rotate(90deg)' : 'none' }}>▸</div>
+                <div style={{ fontSize: 8, color: T.SIDEBAR_MUTED, width: 7, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .18s ease' }}>▸</div>
                 {label}
                 <div style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: T.SIDEBAR_LABEL }}>{items.length}</div>
               </div>
@@ -142,7 +146,8 @@ export default function Sidebar({ activeId, mobile }) {
                     <div
                       key={d}
                       onClick={() => nav(d)}
-                      style={{ padding: '8px 18px 8px 39px', fontSize: 13.5, fontWeight: d === activeId ? 600 : 400, color: d === activeId ? '#fff' : '#A7B7CE', background: d === activeId ? 'rgba(255,255,255,.09)' : 'transparent', cursor: 'pointer' }}
+                      className="nxc-nav-row"
+                      style={{ padding: '8px 10px 8px 23px', borderRadius: 8, margin: '1px 0', fontSize: 13.5, fontWeight: d === activeId ? 600 : 400, color: d === activeId ? '#fff' : '#A7B7CE', background: d === activeId ? 'rgba(255,255,255,.09)' : undefined, cursor: 'pointer' }}
                     >
                       {l}
                     </div>
@@ -192,6 +197,10 @@ export default function Sidebar({ activeId, mobile }) {
           <div onClick={() => nav('login')} style={{ flex: '0 0 auto', padding: '12px 18px', fontSize: 13.5, color: T.SIDEBAR_TEXT, cursor: 'pointer' }}>Sign out</div>
         </div>
       </div>
+      <style jsx>{`
+        .nxc-nav-row { transition: background 100ms ease-out; }
+        .nxc-nav-row:hover { background: rgba(255,255,255,.06); }
+      `}</style>
     </motion.div>
   );
 }

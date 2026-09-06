@@ -17,7 +17,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata = {
-  title: 'NEXGO — Multi-courier shipping platform',
+  title: 'NEXGO: Multi-courier shipping platform',
   description: 'Compare live rates, book with any courier, and track every shipment in one console.',
 };
 
