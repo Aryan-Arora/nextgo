@@ -23,6 +23,7 @@ export function AppStateProvider({ children }) {
   const [tab, setTabState] = useState({});
   const [vw, setVw] = useState(1440);
   const [theme, setThemeState] = useState('light');
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     setVw(window.innerWidth);
@@ -104,11 +105,17 @@ export function AppStateProvider({ children }) {
     setExpanded((p) => (p === id ? '' : id));
   }, []);
 
+  const showToast = useCallback((message, tone = 'success') => {
+    setToast({ id: Date.now(), message, tone });
+  }, []);
+
+  const clearToast = useCallback(() => setToast(null), []);
+
   const value = useMemo(() => ({
-    kpis, kpiOpen, paletteOpen, drawerOpen, expanded, openGroups, stage, queueTab, resolution, navOpen, tab, vw, theme,
+    kpis, kpiOpen, paletteOpen, drawerOpen, expanded, openGroups, stage, queueTab, resolution, navOpen, tab, vw, theme, toast,
     setKpiOpen, setPaletteOpen, setDrawerOpen, setStage, setQueueTab, setResolution, setNavOpen,
-    toggleKpi, resetKpi, toggleGroup, setTab, toggleExpanded, nav, closeTransient, setTheme, toggleTheme,
-  }), [kpis, kpiOpen, paletteOpen, drawerOpen, expanded, openGroups, stage, queueTab, resolution, navOpen, tab, vw, theme, toggleKpi, resetKpi, toggleGroup, setTab, toggleExpanded, nav, closeTransient, setTheme, toggleTheme]);
+    toggleKpi, resetKpi, toggleGroup, setTab, toggleExpanded, nav, closeTransient, setTheme, toggleTheme, showToast, clearToast,
+  }), [kpis, kpiOpen, paletteOpen, drawerOpen, expanded, openGroups, stage, queueTab, resolution, navOpen, tab, vw, theme, toast, toggleKpi, resetKpi, toggleGroup, setTab, toggleExpanded, nav, closeTransient, setTheme, toggleTheme, showToast, clearToast]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }

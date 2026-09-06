@@ -44,8 +44,46 @@ function rowOpenBehavior(activeId, nav, setDrawerOpen) {
   return () => {};
 }
 
+function MobileRecords({ table, onOpenRow, showToast }) {
+  const statusIndex = table.cols.findIndex(([label]) => label.toLowerCase() === 'status');
+  const actionIndex = table.cols.length - 1;
+  return (
+    <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {table.rows.map((row, index) => {
+        const primary = row[0];
+        const identity = row[1];
+        const status = statusIndex >= 0 ? row[statusIndex] : null;
+        const action = row[actionIndex];
+        const details = row.slice(2, actionIndex).filter((_, i) => i + 2 !== statusIndex).slice(0, 3);
+        const statusStyle = status?.[0] === 's' ? ST[status[1]] || ST.Cancelled : null;
+        return (
+          <motion.div
+            key={index}
+            onClick={onOpenRow}
+            whileTap={{ scale: 0.985 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.24 }}
+            style={{ padding: 14, border: `1px solid ${T.BORDER}`, borderRadius: 12, background: 'var(--nx-surface)', cursor: 'pointer', boxShadow: '0 1px 1px rgba(15,23,20,.04)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: primary[0] === 'm' ? T.MONO : T.SANS, fontSize: 13, fontWeight: 700, color: primary[0] === 'l' ? '#0E5049' : T.TEXT }}>{primary[1]}</div>
+                {(primary[2] || identity?.[1]) && <div style={{ marginTop: 3, fontSize: 12, color: T.TEXT_MUTED }}>{primary[2] || identity?.[1]}</div>}
+              </div>
+              {statusStyle && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flex: '0 0 auto', fontSize: 11.5, fontWeight: 700, padding: '4px 8px', borderRadius: 20, background: statusStyle[1], color: statusStyle[0], border: `1px solid ${statusStyle[2]}` }}><span style={{ width: 5, height: 5, borderRadius: 5, background: statusStyle[0] }} />{status[1]}</div>}
+            </div>
+            <div style={{ marginTop: 13, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px' }}>
+              {details.map((item, i) => <div key={i}><div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: T.TEXT_FAINT }}>{table.cols[i + 2]?.[0]}</div><div style={{ marginTop: 3, fontSize: 12.5, color: T.TEXT_LABEL, fontWeight: 550 }}>{item[1]}</div>{item[2] && <div style={{ marginTop: 2, fontSize: 11.5, color: T.TEXT_MUTED }}>{item[2]}</div>}</div>)}
+            </div>
+            {action?.[1] && <div onClick={(event) => { event.stopPropagation(); showToast(`${action[1]} is ready for ${primary[1]}`); }} style={{ marginTop: 13, paddingTop: 11, borderTop: `1px solid ${T.DIVIDER}`, fontSize: 12.5, color: '#0E5049', fontWeight: 700 }}>{action[1]} <span aria-hidden="true">→</span></div>}
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TablePage({ activeId, mobile }) {
-  const { tab, setTab, nav, setDrawerOpen } = useAppState();
+  const { tab, setTab, nav, setDrawerOpen, showToast } = useAppState();
   const t = TABLES[activeId];
   if (!t) return null;
 
@@ -55,7 +93,7 @@ export default function TablePage({ activeId, mobile }) {
 
   return (
     <div style={{ flex: 1, padding: '20px 22px 48px', position: 'relative' }}>
-      <ScenicBackdrop />
+      <ScenicBackdrop mode="workspace" />
       <div style={{ position: 'relative', zIndex: 1 }}>
       {t.stats && (
         <div style={{ ...CARD, display: 'grid', gridTemplateColumns: miniCols, marginBottom: 20, overflow: 'hidden' }}>
@@ -112,7 +150,7 @@ export default function TablePage({ activeId, mobile }) {
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', background: 'transparent', borderBottom: `1px solid ${T.DIVIDER}`, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, height: 32, background: T.SURFACE, border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, padding: '0 11px', minWidth: 250, color: T.TEXT_MUTED, fontSize: 13 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, height: 32, background: T.SURFACE, border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, padding: '0 11px', minWidth: mobile ? '100%' : 250, flex: mobile ? '1 0 100%' : undefined, color: T.TEXT_MUTED, fontSize: 13 }}>
             <div style={{ width: 11, height: 11, border: '1.5px solid #A8A395', borderRadius: '50%' }} />{t.search}
           </div>
           {t.filters.map((label) => (
@@ -126,10 +164,11 @@ export default function TablePage({ activeId, mobile }) {
           ))}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             {t.tools.map((label) => (
-              <motion.div key={label} whileTap={TAP} transition={TAP_FAST} className="nxc-btn" style={{ height: 32, display: 'flex', alignItems: 'center', padding: '0 12px', border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, background: T.SURFACE, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</motion.div>
+              <motion.div key={label} onClick={() => showToast(`${label} has been prepared`)} whileTap={TAP} transition={TAP_FAST} className="nxc-btn" style={{ height: 32, display: 'flex', alignItems: 'center', padding: '0 12px', border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, background: T.SURFACE, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</motion.div>
             ))}
           </div>
         </div>
+        {mobile ? <MobileRecords table={t} onOpenRow={onOpenRow} showToast={showToast} /> : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: t.min }}>
             <thead>
@@ -159,7 +198,7 @@ export default function TablePage({ activeId, mobile }) {
                             <div style={{ width: 5, height: 5, borderRadius: '50%', background: d.fg }} />{d.v}
                           </div>
                         )}
-                        {d.isLink && <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0E5049' }}>{d.v}</div>}
+                        {d.isLink && <div onClick={(event) => { event.stopPropagation(); showToast(`${d.v} is ready for ${r[0][1]}`); }} style={{ fontSize: 12.5, fontWeight: 600, color: '#0E5049' }}>{d.v}</div>}
                         {d.isText && (
                           <>
                             <div style={{ fontFamily: d.font, fontSize: d.size, fontWeight: d.fw, color: d.color, fontVariantNumeric: 'tabular-nums' }}>{d.v}</div>
@@ -174,6 +213,7 @@ export default function TablePage({ activeId, mobile }) {
             </tbody>
           </table>
         </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', background: 'transparent', borderTop: `1px solid ${T.DIVIDER}` }}>
           <div style={{ fontSize: 12.5, color: T.TEXT_SECONDARY }}>{t.count}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

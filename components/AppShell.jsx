@@ -9,6 +9,7 @@ import MobileOverlay from './MobileOverlay';
 import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import NdrDrawer from './NdrDrawer';
+import Toast from './Toast';
 
 export default function AppShell({ children }) {
   const pathname = usePathname();
@@ -27,6 +28,7 @@ export default function AppShell({ children }) {
         </div>
         <NdrDrawer />
         <CommandPalette />
+        <Toast />
       </div>
     </div>
   );
