@@ -62,15 +62,17 @@ function Toggle({ on }) {
   );
 }
 
-export default function FormPage({ activeId, mobile }) {
+export default function FormPage({ activeId, mobile, phone }) {
   const form = resolveForm(activeId);
   const [saved, setSaved] = useState(false);
   if (!form) return null;
 
   const formCols = mobile ? '1fr' : form.cols;
 
+  const pagePad = phone ? 12 : mobile ? 16 : 22;
+
   return (
-    <div style={{ flex: 1, padding: '20px 22px 48px', position: 'relative' }}>
+    <div style={{ flex: 1, padding: `${phone ? 12 : 20}px ${pagePad}px 48px`, position: 'relative' }}>
       <ScenicBackdrop mode="workspace" />
       <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: formCols, gap: 20, alignItems: 'start' }}>
         <div>
@@ -80,7 +82,7 @@ export default function FormPage({ activeId, mobile }) {
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.SECTION_HEAD }}>{sec.label}</div>
                 {sec.sub && <div style={{ fontSize: 12.5, color: T.TEXT_MUTED, marginTop: 5 }}>{sec.sub}</div>}
               </div>
-              <div style={{ padding: 18, display: 'grid', gridTemplateColumns: mobile ? '1fr' : sec.cols, gap: 16 }}>
+              <div style={{ padding: phone ? 14 : 18, display: 'grid', gridTemplateColumns: mobile ? '1fr' : sec.cols, gap: phone ? 14 : 16 }}>
                 {sec.fields.map((f, fi) => {
                   const kind = f[0];
                   const isToggle = kind === 'g' || kind === 'h';

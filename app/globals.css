@@ -1,14 +1,14 @@
 :root {
   --nx-surface: #ffffff;
-  --nx-surface-soft: #FAF8F4;
-  --nx-paper: #F5F3EF;
-  --nx-panel: #FCFBF8;
+  --nx-surface-soft: #F1F5F7;
+  --nx-paper: #E8EEF2;
+  --nx-panel: #F7F9FB;
 
-  --nx-border: #E3DED3;
-  --nx-divider: #EDEAE2;
-  --nx-input-border: #D8D2C6;
-  --nx-row-divider: #F0EDE6;
-  --nx-menu-border: #C9C3B6;
+  --nx-border: #D2DCE4;
+  --nx-divider: #E1E8ED;
+  --nx-input-border: #C7D3DD;
+  --nx-row-divider: #E7EDF1;
+  --nx-menu-border: #B9C7D1;
 
   --nx-text: #171613;
   --nx-text-label: #3A362C;
@@ -18,12 +18,34 @@
   --nx-table-head: #6B6659;
   --nx-section-head: #4B4740;
 
-  --nx-bg-tint-1: rgba(0,179,164,.05);
-  --nx-bg-tint-2: rgba(15,31,61,.045);
+  --nx-bg-tint-1: rgba(0,145,139,.075);
+  --nx-bg-tint-2: rgba(33,65,107,.07);
+  --nx-workspace-bg: #DDE6EC;
+  --nx-workspace-glow-1: rgba(0,164,155,.14);
+  --nx-workspace-glow-2: rgba(53,88,136,.13);
+  --nx-chrome-bg: #F6F9FB;
+  --nx-chrome-border: #D6E0E7;
+  --nx-chrome-text: #172A45;
+  --nx-chrome-muted: #718096;
+  --nx-chrome-search: #EAF0F4;
+  --nx-side-bg: #EAF0F4;
+  --nx-side-edge: #D2DDE5;
+  --nx-side-text: #24364B;
+  --nx-side-sub: #758399;
+  --nx-side-label: #718096;
+  --nx-side-soft: #DCE6ED;
+  --nx-side-active: rgba(0,151,143,.13);
+  --nx-side-active-text: #0E5049;
+  --nx-side-wallet: #D9EEEB;
+  --nx-side-wallet-text: #174B47;
   --nx-card-sheen-top: rgba(255,255,255,.9);
   --nx-card-sheen-1: #fff;
   --nx-card-sheen-2: #FDFCFA;
   --nx-scrollbar-thumb: rgba(120, 116, 104, .3);
+  --nx-loader-bg: #E8EEF2;
+  --nx-loader-label: #58718B;
+  --nx-loader-track: rgba(31,73,108,.16);
+  --nx-loader-accent: #008F85;
 
   /* Translucent glass over a photo backdrop (dashboard cards) — needs to
      stay see-through in both themes, just tinted differently. */
@@ -54,6 +76,24 @@
 
   --nx-bg-tint-1: rgba(0,179,164,.07);
   --nx-bg-tint-2: rgba(90,130,190,.05);
+  --nx-workspace-bg: #101821;
+  --nx-workspace-glow-1: rgba(0,179,164,.10);
+  --nx-workspace-glow-2: rgba(61,105,163,.10);
+  --nx-chrome-bg: #0F1F3D;
+  --nx-chrome-border: rgba(255,255,255,.1);
+  --nx-chrome-text: #FFFFFF;
+  --nx-chrome-muted: #8FA2C0;
+  --nx-chrome-search: rgba(255,255,255,.07);
+  --nx-side-bg: linear-gradient(180deg, #102445 0%, #0B1B36 48%, #09162B 100%);
+  --nx-side-edge: rgba(255,255,255,.1);
+  --nx-side-text: #D3DCE9;
+  --nx-side-sub: #8298B8;
+  --nx-side-label: #7189AE;
+  --nx-side-soft: rgba(255,255,255,.045);
+  --nx-side-active: rgba(0,179,164,.19);
+  --nx-side-active-text: #FFFFFF;
+  --nx-side-wallet: linear-gradient(135deg, rgba(0,179,164,.14), rgba(41,77,126,.16));
+  --nx-side-wallet-text: #FFFFFF;
   --nx-card-sheen-top: rgba(255,255,255,.06);
   --nx-card-sheen-1: #1E2530;
   --nx-card-sheen-2: #1B212A;
@@ -62,6 +102,10 @@
   --nx-glass-1: rgba(26,32,42,.82);
   --nx-glass-2: rgba(26,32,42,.62);
   --nx-glass-border: rgba(255,255,255,.08);
+  --nx-loader-bg: #0F1F3D;
+  --nx-loader-label: #7189AE;
+  --nx-loader-track: rgba(211,220,233,.16);
+  --nx-loader-accent: #00B3A4;
 }
 
 html, body {

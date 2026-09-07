@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { PAGES, ACTIONS } from '@/lib/data';
 import { useAppState } from '@/lib/AppStateContext';
@@ -11,58 +10,24 @@ import FilterDropdown from './FilterDropdown';
 const TAP = { scale: 0.96 };
 const TAP_FAST = { duration: 0.08 };
 
-function formatAgo(seconds) {
-  if (seconds < 5) return 'synced just now';
-  if (seconds < 60) return `synced ${seconds}s ago`;
-  const m = Math.floor(seconds / 60), s = seconds % 60;
-  return `synced ${m}m ${s}s ago`;
-}
-
-function LiveSync() {
-  const [seconds, setSeconds] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      Thu 03 Sep 2026 · 09:42 IST ·
-      <span style={{ position: 'relative', width: 6, height: 6, display: 'inline-flex' }}>
-        <span className="nxc-live-ping" style={{ position: 'absolute', inset: 0, borderRadius: 4, background: T.GREEN }} />
-        <span style={{ position: 'relative', width: 6, height: 6, borderRadius: 4, background: T.GREEN }} />
-      </span>
-      {formatAgo(seconds)}
-    </div>
-  );
-}
-
-export default function PageHeader({ activeId, isDashboard, mobile }) {
+export default function PageHeader({ activeId, isDashboard, mobile, phone }) {
   const { nav, setPaletteOpen } = useAppState();
   const meta = PAGES[activeId] || ['', '', ''];
   const [crumb, pageTitle, pageSub] = meta;
   const isAdmin = activeId.indexOf('a-') === 0;
   const actions = ACTIONS[activeId] || [];
 
-  const headline = isAdmin
-    ? '1,284 sellers on the platform. 93.8% blended delivery rate, and 18,642 shipments carry an open exception.'
-    : '12,480 orders this cycle, 94.6% delivered, and 158 shipments need a decision today.';
-
   return (
-    <div style={{ background: T.PANEL, borderBottom: `1px solid ${T.BORDER}`, padding: '18px 22px 0', position: 'sticky', top: 52, zIndex: 30 }}>
+    <div style={{ background: T.PANEL, borderBottom: `1px solid ${T.BORDER}`, padding: phone ? '12px 12px 0' : mobile ? '16px 16px 0' : '18px 22px 0', position: 'sticky', top: 52, zIndex: 30 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-        {isDashboard ? (
-          <div style={{ maxWidth: 660 }}>
-            <div style={{ fontFamily: T.MONO, fontSize: 10, letterSpacing: '.14em', textTransform: 'uppercase', color: T.TEXT_MUTED }}><LiveSync /></div>
-            <div style={{ fontSize: 23, fontWeight: 600, letterSpacing: '-.025em', marginTop: 9, lineHeight: 1.3 }}>{headline}</div>
-          </div>
-        ) : (
+        {isDashboard ? <div aria-hidden="true" /> : (
           <div style={{ maxWidth: 660 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.TEXT_MUTED }}>{crumb}</div>
             <div style={{ fontSize: 23, fontWeight: 600, letterSpacing: '-.02em', marginTop: 8, lineHeight: 1.2 }}>{pageTitle}</div>
             <div style={{ fontSize: 13.5, color: T.TEXT_SECONDARY, marginTop: 7, lineHeight: 1.5 }}>{pageSub}</div>
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, paddingBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, paddingBottom: phone ? 12 : 16, marginLeft: isDashboard ? 'auto' : undefined, maxWidth: '100%', overflowX: phone ? 'auto' : undefined }}>
           {actions.map(([label, primary, dest], i) => (
             <motion.div
               key={i}

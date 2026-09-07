@@ -20,6 +20,7 @@ export function AppStateProvider({ children }) {
   const [queueTab, setQueueTab] = useState('All');
   const [resolution, setResolution] = useState(0);
   const [navOpen, setNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [tab, setTabState] = useState({});
   const [vw, setVw] = useState(1440);
   const [theme, setThemeState] = useState('light');
@@ -33,10 +34,12 @@ export function AppStateProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem('nx-theme');
-    const initial = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    setThemeState(initial);
-    document.documentElement.setAttribute('data-theme', initial);
+    if (window.localStorage.getItem('nx-sidebar-collapsed') === 'true') setSidebarCollapsed(true);
+  }, []);
+
+  useEffect(() => {
+    setThemeState('light');
+    document.documentElement.setAttribute('data-theme', 'light');
   }, []);
 
   const setTheme = useCallback((next) => {
@@ -105,6 +108,14 @@ export function AppStateProvider({ children }) {
     setExpanded((p) => (p === id ? '' : id));
   }, []);
 
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((previous) => {
+      const next = !previous;
+      window.localStorage.setItem('nx-sidebar-collapsed', String(next));
+      return next;
+    });
+  }, []);
+
   const showToast = useCallback((message, tone = 'success') => {
     setToast({ id: Date.now(), message, tone });
   }, []);
@@ -112,10 +123,10 @@ export function AppStateProvider({ children }) {
   const clearToast = useCallback(() => setToast(null), []);
 
   const value = useMemo(() => ({
-    kpis, kpiOpen, paletteOpen, drawerOpen, expanded, openGroups, stage, queueTab, resolution, navOpen, tab, vw, theme, toast,
+    kpis, kpiOpen, paletteOpen, drawerOpen, expanded, openGroups, stage, queueTab, resolution, navOpen, sidebarCollapsed, tab, vw, theme, toast,
     setKpiOpen, setPaletteOpen, setDrawerOpen, setStage, setQueueTab, setResolution, setNavOpen,
-    toggleKpi, resetKpi, toggleGroup, setTab, toggleExpanded, nav, closeTransient, setTheme, toggleTheme, showToast, clearToast,
-  }), [kpis, kpiOpen, paletteOpen, drawerOpen, expanded, openGroups, stage, queueTab, resolution, navOpen, tab, vw, theme, toast, toggleKpi, resetKpi, toggleGroup, setTab, toggleExpanded, nav, closeTransient, setTheme, toggleTheme, showToast, clearToast]);
+    toggleKpi, resetKpi, toggleGroup, setTab, toggleExpanded, toggleSidebar, nav, closeTransient, setTheme, toggleTheme, showToast, clearToast,
+  }), [kpis, kpiOpen, paletteOpen, drawerOpen, expanded, openGroups, stage, queueTab, resolution, navOpen, sidebarCollapsed, tab, vw, theme, toast, toggleKpi, resetKpi, toggleGroup, setTab, toggleExpanded, toggleSidebar, nav, closeTransient, setTheme, toggleTheme, showToast, clearToast]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }

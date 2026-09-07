@@ -8,17 +8,24 @@
 // to reveal the app. Canvas 2D, requestAnimationFrame, no external libs.
 
 import { useEffect, useRef, useState } from 'react';
-import { NAVY } from '@/lib/theme';
-
 const clamp = (n, min = 0, max = 1) => Math.max(min, Math.min(max, n));
 const smooth = (n) => { n = clamp(n); return n * n * (3 - 2 * n); };
 const mix = (a, b, t) => a + (b - a) * t;
 const hash = (n) => { const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
 
 const WORD = 'NEXGO';
-const BRIGHT_TONES = ['#00B3A4', '#3FD1C4', '#8BEFE4', '#FFFFFF'];
-const MID_TONES = ['#0E5049', '#5F9E97', '#8298B8'];
-const DIM_TONES = ['#5F779C', '#7189AE', '#3A5178'];
+const LIGHT_PALETTE = {
+  bright: ['#0B776F', '#00A99C', '#45BFB6', '#173B63'],
+  mid: ['#0E5049', '#3A7D84', '#4F7194'],
+  dim: ['#7991A9', '#9CAFC0', '#B8C6D2'],
+  stars: 'rgba(27,59,99,', mesh: '#56BDB6', glow: 'rgba(0,169,156,', scan: '#F8FCFD', solidLeft: '#0F3158', solidMid: '#00A99C', solidRight: '#147A9D', shadow: 'rgba(0,169,156,.22)',
+};
+const DARK_PALETTE = {
+  bright: ['#00B3A4', '#3FD1C4', '#8BEFE4', '#FFFFFF'],
+  mid: ['#0E5049', '#5F9E97', '#8298B8'],
+  dim: ['#5F779C', '#7189AE', '#3A5178'],
+  stars: 'rgba(211,220,233,', mesh: '#3FD1C4', glow: 'rgba(0,179,164,', scan: '#FFFFFF', solidLeft: '#3FD1C4', solidMid: '#FFFFFF', solidRight: '#3FD1C4', shadow: 'rgba(63,209,196,.55)',
+};
 
 const TARGET_COUNT = 1700;
 const MESH_RADIUS_FACTOR = 0.028; // fraction of text width
@@ -61,13 +68,13 @@ function sampleWordmark() {
   return { points, textW, textH, anchorX, anchorY, fontPx: 190 };
 }
 
-function buildParticles() {
+function buildParticles(palette) {
   const { points, textW, textH, anchorX, anchorY, fontPx } = sampleWordmark();
   const particles = points.map((base, i) => {
     const seed = hash(i + 1), q = hash(i + 91);
-    const tone = seed < 0.55 ? BRIGHT_TONES[Math.floor(hash(i + 4) * BRIGHT_TONES.length)]
-      : seed < 0.85 ? MID_TONES[Math.floor(hash(i + 5) * MID_TONES.length)]
-      : DIM_TONES[Math.floor(hash(i + 6) * DIM_TONES.length)];
+    const tone = seed < 0.55 ? palette.bright[Math.floor(hash(i + 4) * palette.bright.length)]
+      : seed < 0.85 ? palette.mid[Math.floor(hash(i + 5) * palette.mid.length)]
+      : palette.dim[Math.floor(hash(i + 6) * palette.dim.length)];
     const size = 1.1 + q * 1.9;
     const fieldR = textW * (0.55 + hash(i + 555) * 0.7);
     const fieldA = hash(i + 777) * Math.PI * 2;
@@ -118,7 +125,8 @@ export default function LoadingScreen({ onFinish }) {
     const host = hostRef.current, canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const { particles, edges, textW, textH, anchorX, anchorY, fontPx } = buildParticles();
+    const palette = document.documentElement.getAttribute('data-theme') === 'dark' ? DARK_PALETTE : LIGHT_PALETTE;
+    const { particles, edges, textW, textH, anchorX, anchorY, fontPx } = buildParticles(palette);
 
     let width = 1, height = 1, ratio = 1, raf;
     let fadingStarted = false;
@@ -157,7 +165,7 @@ export default function LoadingScreen({ onFinish }) {
           const x = (hash(i + 4000) * width + Math.sin(drift * 6 + i) * 6) % width;
           const y = hash(i + 5000) * height;
           const alpha = (0.04 + hash(i + 6000) * 0.1) * progress;
-          ctx.fillStyle = `rgba(211,220,233,${alpha})`;
+          ctx.fillStyle = `${palette.stars}${alpha})`;
           const s = i % 13 === 0 ? 1.6 : 0.8;
           ctx.fillRect(x, y, s, s);
         }
@@ -165,8 +173,8 @@ export default function LoadingScreen({ onFinish }) {
 
       const glowR = Math.max(textW, textH) * scale * 0.62;
       const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-      glow.addColorStop(0, `rgba(0,179,164,${0.24 * progress})`);
-      glow.addColorStop(0.55, `rgba(0,179,164,${0.08 * progress})`);
+      glow.addColorStop(0, `${palette.glow}${0.24 * progress})`);
+      glow.addColorStop(0.55, `${palette.glow}${0.08 * progress})`);
       glow.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = glow; ctx.fillRect(0, 0, width, height);
 
@@ -198,7 +206,7 @@ export default function LoadingScreen({ onFinish }) {
           if (!a || !b) continue;
           const la = Math.min(a.alpha, b.alpha) * 0.5 * meshAlpha;
           if (la < 0.02) continue;
-          ctx.strokeStyle = '#3FD1C4';
+          ctx.strokeStyle = palette.mesh;
           ctx.globalAlpha = la;
           ctx.lineWidth = 0.6;
           ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
@@ -213,7 +221,7 @@ export default function LoadingScreen({ onFinish }) {
       for (const p of particles) {
         const proj = projected.get(p); if (!proj) continue;
         ctx.globalAlpha = proj.alpha * (1 - solid * 0.94);
-        ctx.fillStyle = proj.scanBoost > 0.3 ? '#FFFFFF' : p.color;
+        ctx.fillStyle = proj.scanBoost > 0.3 ? palette.scan : p.color;
         ctx.beginPath(); ctx.arc(proj.x, proj.y, p.size * (1 + proj.scanBoost * 0.5), 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
@@ -226,10 +234,10 @@ export default function LoadingScreen({ onFinish }) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const grad = ctx.createLinearGradient(tx - (textW * scale) / 2, 0, tx + (textW * scale) / 2, 0);
-        grad.addColorStop(0, '#3FD1C4');
-        grad.addColorStop(0.5, '#FFFFFF');
-        grad.addColorStop(1, '#3FD1C4');
-        ctx.shadowColor = 'rgba(63,209,196,.55)';
+        grad.addColorStop(0, palette.solidLeft);
+        grad.addColorStop(0.5, palette.solidMid);
+        grad.addColorStop(1, palette.solidRight);
+        ctx.shadowColor = palette.shadow;
         ctx.shadowBlur = 24 * scale;
         ctx.fillStyle = grad;
         ctx.fillText(WORD, tx, ty);
@@ -259,21 +267,22 @@ export default function LoadingScreen({ onFinish }) {
     <div
       ref={hostRef}
       style={{
-        position: 'fixed', inset: 0, zIndex: 9999, background: NAVY,
-        opacity: fading ? 0 : 1, transition: 'opacity 420ms ease',
+        position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--nx-loader-bg)',
+        opacity: fading ? 0 : 1, transition: 'opacity 420ms cubic-bezier(0.23, 1, 0.32, 1)',
         pointerEvents: fading ? 'none' : 'auto',
       }}
     >
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0 }} />
       <div style={{ position: 'absolute', bottom: 54, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-        <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, letterSpacing: '.24em', color: '#7189AE', textTransform: 'uppercase' }}>Multi-courier shipping platform</div>
-        <div style={{ width: 160, height: 2, background: 'rgba(211,220,233,.16)', overflow: 'hidden', borderRadius: 2 }}>
-          <div className="nexgo-loading-bar" style={{ height: '100%', background: '#00B3A4' }} />
+        <div style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 11, letterSpacing: '.24em', color: 'var(--nx-loader-label)', textTransform: 'uppercase' }}>Multi-courier shipping platform</div>
+        <div style={{ width: 160, height: 2, background: 'var(--nx-loader-track)', overflow: 'hidden', borderRadius: 2 }}>
+          <div className="nexgo-loading-bar" style={{ height: '100%', background: 'var(--nx-loader-accent)' }} />
         </div>
       </div>
       <style jsx>{`
-        .nexgo-loading-bar { animation: nexgoLoadBar 1.5s ease forwards; width: 0%; }
+        .nexgo-loading-bar { animation: nexgoLoadBar 1.5s cubic-bezier(0.23, 1, 0.32, 1) forwards; width: 0%; }
         @keyframes nexgoLoadBar { to { width: 100%; } }
+        @media (prefers-reduced-motion: reduce) { .nexgo-loading-bar { animation-duration: 1ms; } }
       `}</style>
     </div>
   );

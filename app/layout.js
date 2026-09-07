@@ -24,9 +24,9 @@ export const metadata = {
 const THEME_INIT = `
 (function () {
   try {
-    var stored = localStorage.getItem('nx-theme');
-    var theme = stored || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
+    // The product always enters through its light operational workspace.
+    // Dark mode is an in-session preference, selected deliberately from the sidebar.
+    document.documentElement.setAttribute('data-theme', 'light');
   } catch (e) {}
 })();
 `;

@@ -1,26 +1,17 @@
-// Real HD photograph (rolling green hills — sourced from Unsplash, free to
-// use) pinned behind the whole dashboard as a fixed wallpaper. Sits at zIndex
-// 0, below the app chrome (sidebar/topbar are 30/40+) and above the app's
-// flat page background. A dark scrim keeps the glass cards' text readable
-// over the photo's bright/light patches.
-export default function ScenicBackdrop({ mode = 'hero' }) {
-  const workspace = mode === 'workspace';
+// A restrained workspace surface behind all in-app content. It deliberately
+// avoids imagery so operational data stays easy to scan at every viewport.
+export default function ScenicBackdrop() {
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 0,
-        backgroundImage: [
-          workspace
-            ? 'linear-gradient(rgba(10,18,14,.72), rgba(10,18,14,.72))'
-            : 'linear-gradient(rgba(10,18,14,.42), rgba(10,18,14,.42))',
-          'url(/dashboard-field.jpg)',
+        background: [
+          'radial-gradient(900px 620px at 8% -10%, var(--nx-workspace-glow-1), transparent 64%)',
+          'radial-gradient(760px 520px at 100% 8%, var(--nx-workspace-glow-2), transparent 62%)',
+          'var(--nx-workspace-bg)',
         ].join(', '),
-        backgroundSize: 'cover',
-        backgroundPosition: 'center 65%',
-        backgroundRepeat: 'no-repeat',
-        filter: workspace ? 'saturate(.62) contrast(.9)' : 'none',
         pointerEvents: 'none',
       }}
     />

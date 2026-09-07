@@ -11,7 +11,7 @@ import DashboardStatCard from './DashboardStatCard';
 import DashboardStatCardModal from './DashboardStatCardModal';
 import TrendChart from './TrendChart';
 
-export default function DashboardContent({ mobile, narrow }) {
+export default function DashboardContent({ mobile, narrow, phone }) {
   const { kpis, stage, setStage, expanded, toggleExpanded, queueTab, setQueueTab, setDrawerOpen } = useAppState();
   const [expandedCardId, setExpandedCardId] = useState(null);
 
@@ -30,8 +30,9 @@ export default function DashboardContent({ mobile, narrow }) {
   const chartCols = mobile ? '1fr' : chartColCount ? [showTrend ? '1.7fr' : null, showCourier ? '1fr' : null, showCod ? '1fr' : null].filter(Boolean).join(' ') : '1fr';
 
   const total = PIPELINE.reduce((a, p) => a + p[1], 0);
-  const statCols = mobile ? 'repeat(2,1fr)' : narrow ? 'repeat(3,1fr)' : 'repeat(6,1fr)';
-  const pipeCols = mobile ? 'repeat(3,1fr)' : narrow ? 'repeat(5,1fr)' : 'repeat(9,1fr)';
+  const statCols = mobile ? 'repeat(2,minmax(0,1fr))' : narrow ? 'repeat(3,minmax(0,1fr))' : 'repeat(5,minmax(0,1fr))';
+  const pipeCols = phone ? 'repeat(2,minmax(0,1fr))' : mobile ? 'repeat(3,minmax(0,1fr))' : narrow ? 'repeat(5,minmax(0,1fr))' : 'repeat(9,minmax(0,1fr))';
+  const pagePad = phone ? 12 : mobile ? 16 : 22;
 
   const queueTabs = ['All', 'Time critical', 'Money at risk'];
 
@@ -49,7 +50,7 @@ export default function DashboardContent({ mobile, narrow }) {
     <div style={{ flex: 1, padding: '0 0 48px', position: 'relative' }}>
       <ScenicBackdrop />
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '22px 22px 6px', display: 'grid', gridTemplateColumns: statCols, gap: 14 }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: `${phone ? 14 : 22}px ${pagePad}px 6px`, display: 'grid', gridTemplateColumns: statCols, gap: phone ? 10 : 14 }}>
         {statCards.map((c) => (
           <DashboardStatCard key={c.id} card={c} hidden={expandedCardId === c.id} onOpen={setExpandedCardId} />
         ))}
@@ -57,17 +58,17 @@ export default function DashboardContent({ mobile, narrow }) {
 
       <DashboardStatCardModal card={expandedCard} onClose={() => setExpandedCardId(null)} />
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '6px 22px 0' }}>
-        <div style={{ ...GLASS, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: `6px ${pagePad}px 0`, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ ...GLASS, overflow: 'hidden', marginTop: 20 }}>
           <GlassSheen />
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '13px 18px', borderBottom: `1px solid ${T.DIVIDER}` }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: phone ? '12px 14px' : '13px 18px', borderBottom: `1px solid ${T.DIVIDER}` }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.SECTION_HEAD }}>Order pipeline</div>
               <div style={{ fontFamily: T.MONO, fontSize: 12, color: T.TEXT_MUTED }}>12,480 orders · click a stage to filter the queue</div>
             </div>
             <div style={{ fontSize: 11.5, fontWeight: 600, color: '#0E5049', cursor: 'pointer' }}>Open in MIS →</div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: pipeCols, gap: 10, padding: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: pipeCols, gap: phone ? 8 : 10, padding: phone ? 10 : 14 }}>
             {PIPELINE.map(([label, count, color]) => {
               const on = stage === label;
               const pct = (count / total) * 100;
@@ -83,7 +84,7 @@ export default function DashboardContent({ mobile, narrow }) {
                     overflow: 'hidden',
                     cursor: 'pointer',
                     borderRadius: 11,
-                    padding: '13px 14px 14px',
+                    padding: phone ? '11px 10px 12px' : '13px 14px 14px',
                     background: on ? `${color}14` : 'var(--nx-surface)',
                     border: `1px solid ${on ? color : 'var(--nx-border)'}`,
                     boxShadow: on ? `0 1px 1px rgba(15,23,20,.05), 0 6px 16px ${color}22` : '0 1px 1px rgba(15,23,20,.03)',
@@ -93,7 +94,7 @@ export default function DashboardContent({ mobile, narrow }) {
                     <div style={{ width: 7, height: 7, borderRadius: 4, background: color, flex: '0 0 7px' }} />
                     <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: on ? color : T.TEXT_SECONDARY, lineHeight: 1.3 }}>{label}</div>
                   </div>
-                  <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 22, fontWeight: 650, letterSpacing: '-.02em', marginTop: 10, color: T.TEXT }}>{count.toLocaleString('en-IN')}</div>
+                  <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: phone ? 19 : 22, fontWeight: 650, letterSpacing: '-.02em', marginTop: 10, color: T.TEXT }}>{count.toLocaleString('en-IN')}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 10 }}>
                     <div style={{ flex: 1, height: 4, background: 'var(--nx-divider)', borderRadius: 3, overflow: 'hidden' }}>
                       <div style={{ height: '100%', background: color, width: `${pct}%`, borderRadius: 3 }} />
@@ -198,7 +199,7 @@ export default function DashboardContent({ mobile, narrow }) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: chartCols, gap: 20, marginTop: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: chartCols, gap: 20, marginTop: 20, order: -1 }}>
           {showTrend && (
             <div style={{ ...GLASS, overflow: 'hidden' }}>
               <GlassSheen />

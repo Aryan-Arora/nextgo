@@ -82,7 +82,7 @@ function MobileRecords({ table, onOpenRow, showToast }) {
   );
 }
 
-export default function TablePage({ activeId, mobile }) {
+export default function TablePage({ activeId, mobile, phone }) {
   const { tab, setTab, nav, setDrawerOpen, showToast } = useAppState();
   const t = TABLES[activeId];
   if (!t) return null;
@@ -91,8 +91,10 @@ export default function TablePage({ activeId, mobile }) {
   const onOpenRow = rowOpenBehavior(activeId, nav, setDrawerOpen);
   const miniCols = mobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
 
+  const pagePad = phone ? 12 : mobile ? 16 : 22;
+
   return (
-    <div style={{ flex: 1, padding: '20px 22px 48px', position: 'relative' }}>
+    <div style={{ flex: 1, padding: `${phone ? 12 : 20}px ${pagePad}px 48px`, position: 'relative' }}>
       <ScenicBackdrop mode="workspace" />
       <div style={{ position: 'relative', zIndex: 1 }}>
       {t.stats && (
@@ -149,7 +151,7 @@ export default function TablePage({ activeId, mobile }) {
             })}
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', background: 'transparent', borderBottom: `1px solid ${T.DIVIDER}`, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: phone ? '10px' : '11px 14px', background: 'transparent', borderBottom: `1px solid ${T.DIVIDER}`, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, height: 32, background: T.SURFACE, border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, padding: '0 11px', minWidth: mobile ? '100%' : 250, flex: mobile ? '1 0 100%' : undefined, color: T.TEXT_MUTED, fontSize: 13 }}>
             <div style={{ width: 11, height: 11, border: '1.5px solid #A8A395', borderRadius: '50%' }} />{t.search}
           </div>
@@ -162,9 +164,9 @@ export default function TablePage({ activeId, mobile }) {
               style={{ display: 'flex', alignItems: 'center', gap: 8, height: 32, background: T.SURFACE, border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, padding: '0 11px', fontSize: 13, color: T.TEXT_LABEL, cursor: 'pointer', whiteSpace: 'nowrap' }}
             />
           ))}
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <div style={{ marginLeft: phone ? 0 : 'auto', display: 'flex', gap: 8, flex: phone ? '1 0 100%' : undefined }}>
             {t.tools.map((label) => (
-              <motion.div key={label} onClick={() => showToast(`${label} has been prepared`)} whileTap={TAP} transition={TAP_FAST} className="nxc-btn" style={{ height: 32, display: 'flex', alignItems: 'center', padding: '0 12px', border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, background: T.SURFACE, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</motion.div>
+              <motion.div key={label} onClick={() => showToast(`${label} has been prepared`)} whileTap={TAP} transition={TAP_FAST} className="nxc-btn" style={{ height: 32, display: 'flex', justifyContent: phone ? 'center' : undefined, flex: phone ? 1 : undefined, alignItems: 'center', padding: '0 12px', border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, background: T.SURFACE, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</motion.div>
             ))}
           </div>
         </div>

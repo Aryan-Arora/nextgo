@@ -18,7 +18,7 @@ export default function AppShell({ children }) {
   const mobile = vw <= MOBILE_BREAK;
 
   return (
-    <div style={{ '--ac': '#00B3A4', minHeight: '100vh', background: PAPER, color: TEXT }}>
+    <div style={{ '--ac': '#00B3A4', minHeight: '100vh', minWidth: 0, overflowX: 'hidden', background: PAPER, color: TEXT }}>
       <div style={{ display: 'flex' }}>
         <MobileOverlay mobile={mobile} />
         <Sidebar activeId={activeId} mobile={mobile} />
