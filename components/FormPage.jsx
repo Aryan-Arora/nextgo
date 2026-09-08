@@ -79,8 +79,8 @@ export default function FormPage({ activeId, mobile, phone }) {
           {form.sections.map((sec, si) => (
             <div key={si} style={{ ...CARD, marginBottom: 20, overflow: 'hidden' }}>
               <div style={{ padding: '14px 18px', borderBottom: `1px solid ${T.DIVIDER}` }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.SECTION_HEAD }}>{sec.label}</div>
-                {sec.sub && <div style={{ fontSize: 12.5, color: T.TEXT_MUTED, marginTop: 5 }}>{sec.sub}</div>}
+                <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: T.SECTION_HEAD }}>{sec.label}</div>
+                {sec.sub && <div style={{ fontSize: 13.5, color: T.TEXT_MUTED, marginTop: 5 }}>{sec.sub}</div>}
               </div>
               <div style={{ padding: phone ? 14 : 18, display: 'grid', gridTemplateColumns: mobile ? '1fr' : sec.cols, gap: phone ? 14 : 16 }}>
                 {sec.fields.map((f, fi) => {
@@ -97,17 +97,17 @@ export default function FormPage({ activeId, mobile, phone }) {
                           <Toggle on={on} />
                           <div>
                             <div style={{ fontSize: 13.5, fontWeight: 600 }}>{label}</div>
-                            {hint && <div style={{ fontSize: 12.5, color: T.TEXT_MUTED, marginTop: 3, lineHeight: 1.5 }}>{hint}</div>}
+                            {hint && <div style={{ fontSize: 13.5, color: T.TEXT_MUTED, marginTop: 3, lineHeight: 1.5 }}>{hint}</div>}
                           </div>
                         </div>
                       ) : (
                         <>
-                          <div style={{ fontSize: 12.5, fontWeight: 600, color: T.TEXT_LABEL, marginBottom: 7 }}>{label}</div>
-                          <div style={{ minHeight: 38, borderRadius: 8, border: `1px solid ${T.INPUT_BORDER}`, background: T.SURFACE, padding: '9px 11px', display: 'flex', alignItems: 'center', gap: 8, fontFamily: font, fontSize: 13.5, color, lineHeight: 1.5 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 600, color: T.TEXT_LABEL, marginBottom: 7 }}>{label}</div>
+                          <div style={{ minHeight: 40, borderRadius: 8, border: `1px solid ${T.INPUT_BORDER}`, background: T.SURFACE, padding: '9px 11px', display: 'flex', alignItems: 'center', gap: 8, fontFamily: font, fontSize: 14.5, color, lineHeight: 1.5 }}>
                             {value}
                             <div style={{ marginLeft: 'auto', fontSize: 11.5, color: T.TEXT_FAINT }}>{suffix}</div>
                           </div>
-                          {hint && <div style={{ fontSize: 11.5, color: T.TEXT_MUTED, marginTop: 5, lineHeight: 1.5 }}>{hint}</div>}
+                          {hint && <div style={{ fontSize: 12, color: T.TEXT_MUTED, marginTop: 5, lineHeight: 1.5 }}>{hint}</div>}
                         </>
                       )}
                     </div>
@@ -128,7 +128,7 @@ export default function FormPage({ activeId, mobile, phone }) {
           <div>
             {form.aside.map((a, ai) => (
               <div key={ai} style={{ ...CARD, marginBottom: 20, overflow: 'hidden' }}>
-                <div style={{ padding: '13px 16px', borderBottom: `1px solid ${T.DIVIDER}`, fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.SECTION_HEAD }}>{a.label}</div>
+                <div style={{ padding: '13px 16px', borderBottom: `1px solid ${T.DIVIDER}`, fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: T.SECTION_HEAD }}>{a.label}</div>
                 <div style={{ padding: '14px 16px' }}>
                   {a.body && <div style={{ fontSize: 13, color: T.TEXT_LABEL, lineHeight: 1.65 }}>{a.body}</div>}
                   {(a.rows || []).map(([k, v], ri) => (

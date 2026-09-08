@@ -22,9 +22,9 @@ export default function PageHeader({ activeId, isDashboard, mobile, phone }) {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
         {isDashboard ? <div aria-hidden="true" /> : (
           <div style={{ maxWidth: 660 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.TEXT_MUTED }}>{crumb}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: T.TEXT_MUTED }}>{crumb}</div>
             <div style={{ fontSize: 23, fontWeight: 600, letterSpacing: '-.02em', marginTop: 8, lineHeight: 1.2 }}>{pageTitle}</div>
-            <div style={{ fontSize: 13.5, color: T.TEXT_SECONDARY, marginTop: 7, lineHeight: 1.5 }}>{pageSub}</div>
+            <div style={{ fontSize: 14.5, color: T.TEXT_SECONDARY, marginTop: 7, lineHeight: 1.5 }}>{pageSub}</div>
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, paddingBottom: phone ? 12 : 16, marginLeft: isDashboard ? 'auto' : undefined, maxWidth: '100%', overflowX: phone ? 'auto' : undefined }}>
@@ -35,7 +35,7 @@ export default function PageHeader({ activeId, isDashboard, mobile, phone }) {
               transition={TAP_FAST}
               onClick={() => { if (dest) nav(dest); }}
               className={primary ? '' : 'nxc-btn'}
-              style={{ height: 32, padding: '0 13px', borderRadius: 7, border: `1px solid ${primary ? T.NAVY : T.INPUT_BORDER}`, background: primary ? T.NAVY : T.SURFACE, color: primary ? '#fff' : T.TEXT, display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+              style={{ height: 34, padding: '0 13px', borderRadius: 7, border: `1px solid ${primary ? T.NAVY : T.INPUT_BORDER}`, background: primary ? T.NAVY : T.SURFACE, color: primary ? '#fff' : T.TEXT, display: 'flex', alignItems: 'center', fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}
             >
               {label}
             </motion.div>

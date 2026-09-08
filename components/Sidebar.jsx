@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { WALLET_BALANCE } from '@/lib/data';
 import { useAppState } from '@/lib/AppStateContext';
 import * as T from '@/lib/theme';
 
@@ -26,14 +25,14 @@ const ICONS = {
 // and deeper screens revealed only when that job is in focus.
 const MENU = [
   ['dashboard', 'Dashboard', 'dashboard', []],
-  ['intake', 'Orders', 'orders', [['All orders', 'orders'], ['Create order', 'b2c'], ['Return order', 'reverse'], ['Dropshipping', 'dropship']]],
-  ['flight', 'Track', 'shipments', [['Shipments', 'shipments'], ['Shipment detail', 'ship-detail']]],
-  ['returns', 'Returns', 'reverse', [['Return orders', 'reverse']]],
-  ['exceptions', 'NDR', 'ndr', [['NDR follow-ups', 'ndr'], ['Weight discrepancies', 'weight']]],
-  ['book', 'Logistics', 'shipnow', [['Ship now', 'shipnow'], ['Rate calculator', 'ratecalc'], ['Rate card', 'ratecard'], ['Pincode serviceability', 'pincode']]],
-  ['addons', 'Add-ons', 'amazon', [['Amazon', 'amazon'], ['Shopify', 'shopify'], ['WooCommerce', 'woo'], ['OpenCart', 'opencart'], ['Magento', 'magento'], ['WhatsApp API', 'wa-api'], ['SMS API', 'sms-api'], ['WhatsApp marketing', 'whatsapp'], ['Email marketing', 'email']]],
-  ['settings', 'Settings', 'warehouse', [['Warehouse settings', 'warehouse'], ['KYC', 'kyc'], ['Courier rules', 'courier-rules'], ['Label settings', 'label'], ['Invoice settings', 'inv-settings'], ['Printer settings', 'printer'], ['Webhooks', 'webhook'], ['Notifications', 'notifications'], ['Profile', 'profile'], ['Change password', 'password']]],
-  ['reports', 'Reports', 'mis', [['MIS reports', 'mis'], ['COD reconciliation', 'cod'], ['Shipping charges', 'charges'], ['Recharges', 'recharges'], ['Wallet history', 'wallet'], ['Invoices', 'invoice']]],
+  ['intake', 'Orders Management', 'orders', [['All orders', 'orders'], ['Create forward order', 'b2c'], ['Bulk order upload', 'orders'], ['Reverse order', 'reverse']]],
+  ['flight', 'Track', 'shipments', [['Shipments', 'shipments']]],
+  ['reports', 'Reports', 'mis', [['MIS report', 'mis'], ['Weight discrepancies', 'weight'], ['NDR report', 'ndr']]],
+  ['book', 'Tools', 'ratecalc', [['Rate calculator', 'ratecalc'], ['Rate card', 'ratecard'], ['Pincode serviceability', 'pincode']]],
+  ['addons', 'Marketplace', 'shopify', [['Shopify', 'shopify'], ['WooCommerce', 'woo'], ['Magento', 'magento'], ['Amazon', 'amazon']]],
+  ['settings', 'Control Tower', 'account-config', [['Account configuration', 'account-config'], ['Printer settings', 'printer'], ['Invoice settings', 'inv-settings'], ['SMS notifications', 'sms-api'], ['WhatsApp notifications', 'wa-api'], ['Order confirmation', 'notifications'], ['Webhook', 'webhook'], ['Scheduled email reports', 'email']]],
+  ['returns', 'Team', 'profile', [['Team and roles', 'profile']]],
+  ['exceptions', 'Settings', 'profile', [['Profile settings', 'profile'], ['Warehouse settings', 'warehouse'], ['Courier rules', 'courier-rules'], ['Label settings', 'label'], ['KYC', 'kyc'], ['Change password', 'password']]],
 ];
 
 const isMenuActive = ([, , destination, children], activeId) => destination === activeId || children.some(([, id]) => id === activeId);
@@ -101,8 +100,6 @@ export default function Sidebar({ activeId, mobile }) {
         display: 'flex', flexDirection: 'column',
       };
 
-  const isAdmin = activeId.indexOf('a-') === 0;
-
   const onDashboard = activeId === 'dashboard';
   const outerStyle = mobile ? sbStyle : { ...sbStyle, width: undefined, flex: '0 0 auto', overflow: 'hidden' };
   const outerMotion = mobile ? mobileMotionProps : { animate: { width: collapsed ? 76 : 272 }, transition: reduced ? { duration: 0.16 } : OPEN_SPRING };
@@ -124,7 +121,6 @@ export default function Sidebar({ activeId, mobile }) {
           })}
         </div>
         <div style={{ padding: '12px 14px', display: 'grid', justifyItems: 'center', gap: 11, borderTop: '1px solid var(--nx-side-edge)' }}>
-          <div onClick={() => nav('wallet')} title="Wallet" style={{ width: 38, height: 38, borderRadius: 11, display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--nx-side-wallet-text)', background: 'var(--nx-side-wallet)', border: '1px solid rgba(0,179,164,.18)', fontSize: 14 }}>₹</div>
           <div onClick={() => nav('profile')} title="Anita Rao" style={{ width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(145deg, #2B8EAA, #7B5FB8)', display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: 10, fontWeight: 800, color: '#fff' }}>AR</div>
         </div>
       </motion.div>
@@ -140,21 +136,12 @@ export default function Sidebar({ activeId, mobile }) {
         style={{ height: 68, flex: '0 0 68px', display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', borderBottom: '1px solid var(--nx-side-edge)', cursor: 'pointer', background: 'var(--nx-side-bg)' }}
       >
         <div style={{ width: 31, height: 31, background: 'linear-gradient(145deg, #35D5C5, #00A99C)', boxShadow: '0 8px 18px rgba(0,179,164,.24)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, color: '#06212C', borderRadius: 9, clipPath: 'polygon(0 0,100% 0,100% 72%,72% 100%,0 100%)' }}>N</div>
-        <div style={{ minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 750, letterSpacing: '.13em', color: 'var(--nx-side-text)', lineHeight: 1 }}>NEXGO</div><div style={{ marginTop: 5, fontSize: 9.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--nx-side-label)' }}>Shipping OS</div></div>
-        <div style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 800, letterSpacing: '.1em', color: 'var(--nx-side-active-text)', background: 'var(--nx-side-active)', border: '1px solid rgba(0,179,164,.2)', padding: '3px 6px', borderRadius: 5 }}>
-          {isAdmin ? 'ADMIN' : 'SELLER'}
-        </div>
+        <div style={{ minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 750, letterSpacing: '.13em', color: 'var(--nx-side-text)', lineHeight: 1 }}>NEXGO</div></div>
         {!mobile && <CollapseControl collapsed={false} onClick={(event) => { event.stopPropagation(); toggleSidebar(); }} />}
       </motion.div>
 
-      <div style={{ margin: '10px 10px 0', padding: '10px 11px', display: 'flex', alignItems: 'center', gap: 9, borderRadius: 10, background: 'var(--nx-side-wallet)', border: '1px solid rgba(0,179,164,.18)' }}>
-        <div style={{ width: 25, height: 25, borderRadius: 7, display: 'grid', placeItems: 'center', color: 'var(--nx-side-wallet-text)', background: 'var(--nx-side-active)', fontSize: 12, fontWeight: 700 }}>₹</div>
-        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--nx-side-label)' }}>Wallet</div><div style={{ marginTop: 2, color: 'var(--nx-side-wallet-text)', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{WALLET_BALANCE}</div></div>
-        <div onClick={() => nav('recharges')} style={{ padding: '4px 6px', borderRadius: 5, cursor: 'pointer', color: 'var(--nx-side-wallet-text)', background: 'var(--nx-side-active)', fontSize: 10, fontWeight: 800 }}>+</div>
-      </div>
-
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 8px 18px' }}>
-        <div style={{ padding: '0 10px 9px', fontSize: 9.5, fontWeight: 800, letterSpacing: '.13em', textTransform: 'uppercase', color: 'var(--nx-side-label)' }}>Main menu</div>
+        <div style={{ padding: '0 10px 9px', fontSize: 12, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--nx-side-label)' }}>Main menu</div>
         {MENU.map((item) => {
           const [id, label, destination, children] = item;
           const on = isMenuActive(item, activeId);
@@ -165,20 +152,31 @@ export default function Sidebar({ activeId, mobile }) {
               <motion.div
                 whileTap={{ scale: 0.985 }}
                 transition={{ duration: 0.1 }}
-                onClick={() => hasChildren && on ? toggleGroup(label, true) : nav(destination)}
+                onClick={() => hasChildren ? toggleGroup(label, !open) : nav(destination)}
                 className="nxc-nav-row"
                 style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 9, cursor: 'pointer', background: on ? 'var(--nx-side-active)' : undefined, border: `1px solid ${on ? 'rgba(0,179,164,.2)' : 'transparent'}` }}
               >
                 {on && <div style={{ position: 'absolute', left: -1, top: 8, bottom: 8, width: 3, borderRadius: 3, background: T.ACCENT }} />}
                 <NavIcon name={id} active={on} />
-                <div style={{ flex: 1, fontSize: 13, fontWeight: on ? 700 : 600, color: on ? 'var(--nx-side-active-text)' : 'var(--nx-side-text)' }}>{label}</div>
+                <div style={{ flex: 1, fontSize: 14, fontWeight: on ? 700 : 600, color: on ? 'var(--nx-side-active-text)' : 'var(--nx-side-text)' }}>{label}</div>
                 {hasChildren && <div style={{ color: 'var(--nx-side-label)', fontSize: 12, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .18s ease' }}>›</div>}
               </motion.div>
               {hasChildren && open && (
                 <div style={{ margin: '2px 0 5px 24px', padding: '2px 0 2px 13px', borderLeft: '1px solid var(--nx-side-edge)', animation: 'nxc-expand .12s ease-out' }}>
                   {children.map(([childLabel, childId]) => (
-                    <div key={childId} onClick={() => nav(childId)} className="nxc-nav-row" style={{ padding: '7px 9px', borderRadius: 7, margin: '1px 0', cursor: 'pointer', fontSize: 12.25, fontWeight: childId === activeId ? 650 : 500, color: childId === activeId ? 'var(--nx-side-active-text)' : 'var(--nx-side-sub)', background: childId === activeId ? 'var(--nx-side-active)' : undefined }}>{childLabel}</div>
+                    <div key={childId} onClick={() => nav(childId)} className="nxc-nav-row" style={{ padding: '7px 9px', borderRadius: 7, margin: '1px 0', cursor: 'pointer', fontSize: 13, fontWeight: childId === activeId ? 650 : 500, color: childId === activeId ? 'var(--nx-side-active-text)' : 'var(--nx-side-sub)', background: childId === activeId ? 'var(--nx-side-active)' : undefined }}>{childLabel}</div>
                   ))}
+                  {id === 'exceptions' && (
+                    <div style={{ marginTop: 7, paddingTop: 8, borderTop: '1px solid var(--nx-side-edge)' }}>
+                      <div style={{ padding: '0 9px 5px', fontSize: 11.5, fontWeight: 750, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--nx-side-label)' }}>Appearance</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+                        {['light', 'dark'].map((mode) => {
+                          const selected = theme === mode;
+                          return <motion.div key={mode} whileTap={{ scale: 0.96 }} onClick={() => { if (!selected) toggleTheme(); }} style={{ height: 31, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 7, cursor: 'pointer', fontSize: 12.5, fontWeight: selected ? 700 : 550, color: selected ? 'var(--nx-side-active-text)' : 'var(--nx-side-sub)', background: selected ? 'var(--nx-side-active)' : 'var(--nx-side-soft)', border: `1px solid ${selected ? 'rgba(0,179,164,.24)' : 'var(--nx-side-edge)'}` }}>{mode === 'light' ? '☀' : '◐'} {mode === 'light' ? 'Light mode' : 'Dark mode'}</motion.div>;
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -187,34 +185,9 @@ export default function Sidebar({ activeId, mobile }) {
       </div>
 
       <div style={{ padding: '10px 10px 11px', borderTop: '1px solid var(--nx-side-edge)', background: 'var(--nx-side-bg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 8px 10px' }}>
-          <div><div style={{ fontSize: 11.5, color: 'var(--nx-side-text)', fontWeight: 600 }}>Interface mode</div><div style={{ marginTop: 2, fontSize: 10, color: 'var(--nx-side-label)' }}>{theme === 'dark' ? 'Dark contrast' : 'Light contrast'}</div></div>
-          <motion.div
-            whileTap={{ scale: 0.94 }}
-            transition={{ duration: 0.1 }}
-            onClick={toggleTheme}
-            style={{
-              marginLeft: 'auto', width: 44, height: 24, borderRadius: 12, position: 'relative', cursor: 'pointer',
-              background: theme === 'dark' ? 'rgba(0,179,164,.28)' : '#E8EEF3',
-              border: `1px solid ${theme === 'dark' ? T.ACCENT : '#D5DEE7'}`,
-            }}
-          >
-            <motion.div
-              layout
-              transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
-              style={{
-                position: 'absolute', top: 2, left: theme === 'dark' ? 22 : 2, width: 18, height: 18, borderRadius: 9,
-                background: theme === 'dark' ? T.ACCENT : '#FFFFFF',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10,
-              }}
-            >
-              {theme === 'dark' ? '🌙' : '☀️'}
-            </motion.div>
-          </motion.div>
-        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 7px 0', borderTop: '1px solid var(--nx-side-edge)' }}>
           <div style={{ width: 28, height: 28, borderRadius: 9, background: 'linear-gradient(145deg, #2B8EAA, #7B5FB8)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, color: '#fff' }}>AR</div>
-          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--nx-side-text)' }}>Anita Rao</div><div style={{ marginTop: 2, fontSize: 10, color: 'var(--nx-side-label)' }}>Karma Living · Owner</div></div>
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--nx-side-text)' }}>Anita Rao</div><div style={{ marginTop: 2, fontSize: 12, color: 'var(--nx-side-label)' }}>Karma Living · Owner</div></div>
           <div onClick={() => nav('login')} title="Sign out" style={{ padding: '6px 7px', borderRadius: 6, fontSize: 12, color: 'var(--nx-side-text)', cursor: 'pointer', background: 'var(--nx-side-soft)' }}>↪</div>
         </div>
       </div>

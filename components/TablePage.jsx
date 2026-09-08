@@ -67,12 +67,12 @@ function MobileRecords({ table, onOpenRow, showToast }) {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: primary[0] === 'm' ? T.MONO : T.SANS, fontSize: 13, fontWeight: 700, color: primary[0] === 'l' ? '#0E5049' : T.TEXT }}>{primary[1]}</div>
-                {(primary[2] || identity?.[1]) && <div style={{ marginTop: 3, fontSize: 12, color: T.TEXT_MUTED }}>{primary[2] || identity?.[1]}</div>}
+                {(primary[2] || identity?.[1]) && <div style={{ marginTop: 3, fontSize: 13, color: T.TEXT_MUTED }}>{primary[2] || identity?.[1]}</div>}
               </div>
               {statusStyle && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flex: '0 0 auto', fontSize: 11.5, fontWeight: 700, padding: '4px 8px', borderRadius: 20, background: statusStyle[1], color: statusStyle[0], border: `1px solid ${statusStyle[2]}` }}><span style={{ width: 5, height: 5, borderRadius: 5, background: statusStyle[0] }} />{status[1]}</div>}
             </div>
             <div style={{ marginTop: 13, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px' }}>
-              {details.map((item, i) => <div key={i}><div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: T.TEXT_FAINT }}>{table.cols[i + 2]?.[0]}</div><div style={{ marginTop: 3, fontSize: 12.5, color: T.TEXT_LABEL, fontWeight: 550 }}>{item[1]}</div>{item[2] && <div style={{ marginTop: 2, fontSize: 11.5, color: T.TEXT_MUTED }}>{item[2]}</div>}</div>)}
+              {details.map((item, i) => <div key={i}><div style={{ fontSize: 12, letterSpacing: '.06em', textTransform: 'uppercase', color: T.TEXT_FAINT }}>{table.cols[i + 2]?.[0]}</div><div style={{ marginTop: 3, fontSize: 13.5, color: T.TEXT_LABEL, fontWeight: 550 }}>{item[1]}</div>{item[2] && <div style={{ marginTop: 2, fontSize: 13, color: T.TEXT_MUTED }}>{item[2]}</div>}</div>)}
             </div>
             {action?.[1] && <div onClick={(event) => { event.stopPropagation(); showToast(`${action[1]} is ready for ${primary[1]}`); }} style={{ marginTop: 13, paddingTop: 11, borderTop: `1px solid ${T.DIVIDER}`, fontSize: 12.5, color: '#0E5049', fontWeight: 700 }}>{action[1]} <span aria-hidden="true">→</span></div>}
           </motion.div>
@@ -107,7 +107,7 @@ export default function TablePage({ activeId, mobile, phone }) {
               transition={{ delay: Math.min(i * 0.04, 0.16), duration: 0.28, ease: 'easeOut' }}
               style={{ padding: '14px 16px', borderRight: (i + 1) % (mobile ? 2 : 4) !== 0 ? `1px solid ${T.DIVIDER}` : 'none', borderBottom: i < t.stats.length - (mobile ? 2 : 4) ? `1px solid ${T.DIVIDER}` : 'none' }}
             >
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.TEXT_MUTED }}>{label}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: T.TEXT_MUTED }}>{label}</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginTop: 9 }}>
                 <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 24, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1 }}>{value}</div>
                 <div style={{
@@ -117,7 +117,7 @@ export default function TablePage({ activeId, mobile, phone }) {
                   padding: '2px 7px', borderRadius: 20,
                 }}>{delta}</div>
               </div>
-              <div style={{ fontSize: 12, color: T.TEXT_MUTED, marginTop: 7 }}>{sub}</div>
+              <div style={{ fontSize: 13, color: T.TEXT_MUTED, marginTop: 7 }}>{sub}</div>
             </motion.div>
           ))}
         </div>
@@ -176,7 +176,7 @@ export default function TablePage({ activeId, mobile, phone }) {
             <thead>
               <tr style={{ background: 'transparent' }}>
                 {t.cols.map(([label, align]) => (
-                  <th key={label + align} style={{ padding: '9px 14px', textAlign: align, fontSize: 10.5, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: T.TABLE_HEAD, borderBottom: `1px solid ${T.BORDER}`, whiteSpace: 'nowrap' }}>{label}</th>
+                  <th key={label + align} style={{ padding: '11px 14px', textAlign: align, fontSize: 12.5, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: T.TABLE_HEAD, borderBottom: `1px solid ${T.BORDER}`, whiteSpace: 'nowrap' }}>{label}</th>
                 ))}
               </tr>
             </thead>
@@ -204,7 +204,7 @@ export default function TablePage({ activeId, mobile, phone }) {
                         {d.isText && (
                           <>
                             <div style={{ fontFamily: d.font, fontSize: d.size, fontWeight: d.fw, color: d.color, fontVariantNumeric: 'tabular-nums' }}>{d.v}</div>
-                            {d.sub && <div style={{ fontSize: 11.5, color: T.TEXT_MUTED, marginTop: 2 }}>{d.sub}</div>}
+                            {d.sub && <div style={{ fontSize: 12, color: T.TEXT_MUTED, marginTop: 2 }}>{d.sub}</div>}
                           </>
                         )}
                       </td>

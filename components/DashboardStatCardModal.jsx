@@ -65,7 +65,7 @@ export default function DashboardStatCardModal({ card, onClose }) {
               </svg>
 
               <div style={{ display: 'flex', gap: 8, marginTop: 26 }}>
-                <div style={{ height: 38, padding: '0 18px', background: T.NAVY, color: '#fff', display: 'flex', alignItems: 'center', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 8, boxShadow: '0 6px 16px rgba(15,31,61,.28)' }}>Open in MIS</div>
+                <div style={{ height: 38, padding: '0 18px', background: T.NAVY, color: '#fff', display: 'flex', alignItems: 'center', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 8, boxShadow: '0 6px 16px rgba(15,31,61,.28)' }}>Export</div>
                 <div onClick={onClose} style={{ height: 38, padding: '0 18px', border: `1px solid ${T.INPUT_BORDER}`, background: T.SURFACE, display: 'flex', alignItems: 'center', fontSize: 13, cursor: 'pointer', borderRadius: 8 }}>Close</div>
               </div>
             </motion.div>

@@ -30,7 +30,7 @@ export default function DashboardStatCard({ card, hidden, onOpen }) {
       <div style={{ position: 'absolute', top: 0, left: 14, right: 14, height: 1, background: 'var(--nx-glass-border)' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: card.sparkColor, opacity: 0.85 }} />
 
-      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.13em', textTransform: 'uppercase', color: T.TABLE_HEAD }}>{card.label}</div>
+      <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.TABLE_HEAD }}>{card.label}</div>
 
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginTop: 13 }}>
         <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 28, fontWeight: 650, letterSpacing: '-.025em', lineHeight: .9, color: T.TEXT }}>{card.value}</div>
@@ -44,7 +44,7 @@ export default function DashboardStatCard({ card, hidden, onOpen }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
         <div style={{
-          fontVariantNumeric: 'tabular-nums', fontSize: 11.5, fontWeight: 700, color: card.deltaColor,
+          fontVariantNumeric: 'tabular-nums', fontSize: 12, fontWeight: 700, color: card.deltaColor,
           background: `${card.deltaColor}17`, padding: '2px 7px', borderRadius: 20,
         }}>{card.delta}</div>
         <div style={{ fontSize: 12, color: T.TEXT_MUTED }}>{card.sub}</div>
