@@ -132,6 +132,13 @@ body {
   transition: background-color .25s ease, color .25s ease;
 }
 
+/* A consistent, high-contrast focus ring keeps dense operational screens
+   fast to use by keyboard without adding visual noise at rest. */
+:focus-visible {
+  outline: 3px solid rgba(0,179,164,.42);
+  outline-offset: 2px;
+}
+
 a {
   color: #0E5049;
   text-decoration: none;

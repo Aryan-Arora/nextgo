@@ -10,12 +10,15 @@ import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import NdrDrawer from './NdrDrawer';
 import Toast from './Toast';
+import AdminShell from './AdminShell';
 
 export default function AppShell({ children }) {
   const pathname = usePathname();
   const activeId = idForPath(pathname);
   const { vw } = useAppState();
   const mobile = vw <= MOBILE_BREAK;
+
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') return <AdminShell>{children}</AdminShell>;
 
   return (
     <div style={{ '--ac': '#00B3A4', minHeight: '100vh', minWidth: 0, overflowX: 'hidden', background: PAPER, color: TEXT }}>

@@ -16,6 +16,13 @@ const CARD = {
   borderRadius: 12,
   boxShadow: '0 1px 1px rgba(15,23,20,.05), 0 10px 28px rgba(15,23,20,.10)',
 };
+const ADMIN_CARD = {
+  position: 'relative',
+  background: 'var(--ops-surface)',
+  border: '1px solid var(--ops-border)',
+  borderRadius: 16,
+  boxShadow: 'var(--ops-shadow)',
+};
 const TAP = { scale: 0.97 };
 const TAP_FAST = { duration: 0.08 };
 
@@ -90,15 +97,20 @@ export default function TablePage({ activeId, mobile, phone }) {
   const tabKey = tab[activeId] || (t.tabs && t.tabs[0][0]);
   const onOpenRow = rowOpenBehavior(activeId, nav, setDrawerOpen);
   const miniCols = mobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
+  const admin = activeId.startsWith('a-');
+  const card = admin ? ADMIN_CARD : CARD;
+  // Admin screens are work queues: the table is the primary interface, not a
+  // secondary panel below a dashboard. Context remains in AdminPageHeader.
+  const directTable = admin;
 
   const pagePad = phone ? 12 : mobile ? 16 : 22;
 
   return (
     <div style={{ flex: 1, padding: `${phone ? 12 : 20}px ${pagePad}px 48px`, position: 'relative' }}>
       <ScenicBackdrop mode="workspace" />
-      <div style={{ position: 'relative', zIndex: 1 }}>
-      {t.stats && (
-        <div style={{ ...CARD, display: 'grid', gridTemplateColumns: miniCols, marginBottom: 20, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: admin ? 1560 : undefined, margin: admin ? '0 auto' : undefined }}>
+      {t.stats && !directTable && (
+        <div style={{ ...card, display: 'grid', gridTemplateColumns: miniCols, marginBottom: 20, overflow: 'hidden' }}>
           {t.stats.map(([label, value, delta, dir, sub], i) => (
             <motion.div
               key={label}
@@ -123,7 +135,7 @@ export default function TablePage({ activeId, mobile, phone }) {
         </div>
       )}
 
-      <div style={{ ...CARD, overflow: 'hidden' }}>
+      <div style={{ ...card, overflow: 'hidden' }}>
         {t.tabs && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0 14px', borderBottom: `1px solid ${T.DIVIDER}`, overflowX: 'auto' }}>
             {t.tabs.map(([label, count]) => {
@@ -165,12 +177,13 @@ export default function TablePage({ activeId, mobile, phone }) {
             />
           ))}
           <div style={{ marginLeft: phone ? 0 : 'auto', display: 'flex', gap: 8, flex: phone ? '1 0 100%' : undefined }}>
-            {t.tools.map((label) => (
-              <motion.div key={label} onClick={() => showToast(`${label} has been prepared`)} whileTap={TAP} transition={TAP_FAST} className="nxc-btn" style={{ height: 32, display: 'flex', justifyContent: phone ? 'center' : undefined, flex: phone ? 1 : undefined, alignItems: 'center', padding: '0 12px', border: `1px solid ${T.INPUT_BORDER}`, borderRadius: 7, background: T.SURFACE, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</motion.div>
-            ))}
+            {t.tools.map((label, i) => {
+              const primaryTool = admin && i === t.tools.length - 1;
+              return <motion.div key={label} onClick={() => showToast(`${label} has been prepared`)} whileTap={TAP} transition={TAP_FAST} className={primaryTool ? '' : 'nxc-btn'} style={{ height: 32, display: 'flex', justifyContent: phone ? 'center' : undefined, flex: phone ? 1 : undefined, alignItems: 'center', padding: '0 12px', border: `1px solid ${primaryTool ? T.NAVY : T.INPUT_BORDER}`, borderRadius: 8, background: primaryTool ? T.NAVY : T.SURFACE, color: primaryTool ? '#fff' : T.TEXT, boxShadow: primaryTool ? '0 6px 14px rgba(15,31,61,.16)' : 'none', fontSize: 12.5, fontWeight: 650, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</motion.div>;
+            })}
           </div>
         </div>
-        {mobile ? <MobileRecords table={t} onOpenRow={onOpenRow} showToast={showToast} /> : (
+        {mobile && !directTable ? <MobileRecords table={t} onOpenRow={onOpenRow} showToast={showToast} /> : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: t.min }}>
             <thead>
