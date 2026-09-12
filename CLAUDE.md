@@ -6,6 +6,8 @@ Multi-courier shipping/logistics aggregator (seller-facing console + platform ad
 
 **Status (2026-09-05): frontend-only, presented today as a design prototype.** Every screen renders from static mock data in `lib/data.js` — no backend, no auth, no persistence. All 46 routes verified working (200s, zero console errors). This doc maps what the backend needs to support before any of this is real. Update this file as backend work starts.
 
+**Implementation planning:** `LOCAL_BACKEND_BUILD_PLAN.md` is the local-first execution plan for both seller and admin modules. `AWS_BACKEND_PLAN.md` maps the same production architecture to AWS once the domain logic has been proven locally.
+
 ## Stack & structure
 - Next.js 16 (App Router), React 19, JS (no TS). Runs on port 3021 locally (`.claude/launch.json` at `~/Desktop/.claude/launch.json`, config name `nextgo`).
 - `app/(app)/**` — authenticated shell routes (sidebar + topbar), each `page.js` is a one-liner rendering `<AppPage id="...">`.
