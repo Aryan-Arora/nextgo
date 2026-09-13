@@ -9,7 +9,7 @@ async function claimNextJob(): Promise<Job | null> {
   return withTransaction(async (client) => {
     const result = await client.query<Job>(
       `WITH candidate AS (
-         SELECT id FROM job_runs WHERE state = 'queued' ORDER BY queued_at FOR UPDATE SKIP LOCKED LIMIT 1
+         SELECT id FROM job_runs WHERE state = 'queued' AND next_attempt_at <= now() ORDER BY next_attempt_at, queued_at FOR UPDATE SKIP LOCKED LIMIT 1
        )
        UPDATE job_runs j SET state = 'running', attempts = attempts + 1, started_at = now()
        FROM candidate WHERE j.id = candidate.id
@@ -26,7 +26,8 @@ async function complete(job: Job, result: Record<string, unknown>) {
 async function fail(job: Job, error: unknown) {
   const summary = error instanceof Error ? error.message.slice(0, 1000) : 'Unknown worker error';
   const state = job.attempts >= 5 ? 'dead_letter' : 'queued';
-  await db.query(`UPDATE job_runs SET state = $1::job_state, error_summary = $2, completed_at = CASE WHEN $1 = 'dead_letter' THEN now() ELSE NULL END WHERE id = $3`, [state, summary, job.id]);
+  const delaySeconds = Math.min(900, 2 ** Math.max(0, job.attempts - 1) * 15);
+  await db.query(`UPDATE job_runs SET state = $1::job_state, error_summary = $2, next_attempt_at = CASE WHEN $1 = 'queued' THEN now() + ($3 || ' seconds')::interval ELSE next_attempt_at END, completed_at = CASE WHEN $1 = 'dead_letter' THEN now() ELSE NULL END WHERE id = $4`, [state, summary, String(delaySeconds), job.id]);
 }
 
 async function execute(job: Job) {
@@ -74,6 +75,13 @@ async function execute(job: Job) {
       await db.query(`UPDATE documents SET status='ready',size_bytes=$1,ready_at=now() WHERE id=$2`, [pdf.length, document.id]);
       await complete(job, { documentId, storageKey: document.storage_key, sizeBytes: pdf.length });
       return;
+    }
+    case 'manifest.generate': {
+      const documentId = String(job.payload.documentId ?? '');
+      const result = await db.query<{ storage_key: string; manifest_id: string; awbs: string[] }>(`SELECT d.storage_key,m.id AS manifest_id,array_agg(s.awb ORDER BY s.awb) AS awbs FROM documents d JOIN manifests m ON m.document_id=d.id JOIN manifest_shipments ms ON ms.manifest_id=m.id JOIN shipments s ON s.id=ms.shipment_id WHERE d.id=$1 GROUP BY d.storage_key,m.id`, [documentId]);
+      const manifest = result.rows[0]; if (!manifest) throw new Error('Manifest document was not found');
+      const pdf = await new Promise<Buffer>((resolve,reject)=>{const doc=new PDFDocument({size:'A4',margin:50});const chunks:Buffer[]=[];doc.on('data',(c:Buffer)=>chunks.push(c));doc.on('end',()=>resolve(Buffer.concat(chunks)));doc.on('error',reject);doc.fontSize(20).text('NEXGO DISPATCH MANIFEST');doc.moveDown().fontSize(11).text(`Manifest: ${manifest.manifest_id}`);doc.text(`Shipments: ${manifest.awbs.length}`);doc.moveDown();manifest.awbs.forEach((awb,i)=>doc.text(`${i+1}. ${awb}`));doc.end();});
+      await ensurePrivateBucket(); await storage.putObject(config.MINIO_BUCKET,manifest.storage_key,pdf,pdf.length,{'Content-Type':'application/pdf'}); await db.query(`UPDATE documents SET status='ready',size_bytes=$1,ready_at=now() WHERE id=$2`,[pdf.length,documentId]); await complete(job,{documentId,manifestId:manifest.manifest_id,sizeBytes:pdf.length}); return;
     }
     default:
       throw new Error(`No worker handler is registered for ${job.job_type}`);

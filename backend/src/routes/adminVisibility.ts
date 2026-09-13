@@ -48,7 +48,11 @@ export async function adminVisibilityRoutes(app: FastifyInstance) {
     const current = await db.query<{ state: string }>('SELECT state FROM job_runs WHERE id = $1 FOR UPDATE', [jobId]);
     if (!current.rows[0]) return reply.code(404).send({ error: 'JOB_NOT_FOUND' });
     if (!['failed', 'dead_letter'].includes(current.rows[0].state)) return reply.code(409).send({ error: 'JOB_NOT_RETRYABLE' });
-    const result = await db.query('UPDATE job_runs SET state=\'queued\', error_summary=NULL, started_at=NULL, completed_at=NULL WHERE id=$1 RETURNING id, state', [jobId]);
+    // next_attempt_at also resets to now(): an admin clicking "retry" means
+    // try again immediately, not "wait out whatever backoff was already in
+    // progress" (job_runs.next_attempt_at, added after this endpoint was
+    // first written, is what the worker's claim query actually checks).
+    const result = await db.query('UPDATE job_runs SET state=\'queued\', error_summary=NULL, started_at=NULL, completed_at=NULL, next_attempt_at=now() WHERE id=$1 RETURNING id, state', [jobId]);
     await db.query(
       `INSERT INTO audit_events (actor_user_id, action, target_type, target_id, request_id)
        VALUES ($1,'job.retried','job_run',$2,$3)`,
