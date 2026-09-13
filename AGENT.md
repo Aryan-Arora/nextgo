@@ -13,6 +13,16 @@ production build, not an MVP mock.
   run `npm run dev` and `npm run worker` in separate terminals.
 - Main database is PostgreSQL; AWS target is RDS PostgreSQL. Never replace it with a
   frontend mock database.
+- `admin@nexgo.local` now has TOTP enrolled (from testing item 20) — logging in
+  requires a code, not just the password. Local-only secret, safe to share here:
+  `OAZCKWX6PXRQCMGEULML2NUUPIBW5GTK` (add it to any authenticator app, or compute
+  a code directly against `/v1/admin/mfa` — see `src/lib/totp.ts`). To remove MFA
+  and go back to password-only, clear the three `totp_*` columns on that
+  `platform_admins` row.
+- Every mutating request (POST/PUT/PATCH/DELETE, except `/v1/webhooks/*`) now
+  needs an `x-csrf-token` header matching the `nx_csrf` cookie issued at login —
+  the frontend's fetch wrapper needs to read that cookie and attach the header,
+  or every write from the UI will 403 once it's wired to this API.
 
 ## Implemented and verified
 
@@ -61,6 +71,40 @@ production build, not an MVP mock.
     approve (verified: 409). COD cash is tracked in its own table, not
     folded into `wallet_entries`, since courier-collected COD never actually
     enters the prepaid wallet. `src/routes/codRemittance.ts`.
+17. **(Engineer B)** Team invitations: owner-only invite/revoke/remove, real
+    email delivery via Mailpit (verified: email actually arrives, accept
+    link works, token is single-use — 410 on replay). `src/routes/team.ts`.
+18. **(Engineer B)** Password reset: never confirms/denies whether an email
+    is registered, single-use 60-minute token, resetting revokes every
+    existing session for that user (verified: old session 401s immediately
+    after reset). `src/routes/passwordReset.ts`.
+19. **(Engineer B)** Session visibility + revocation for both seller and
+    admin users: device/IP now captured on every session row, `GET .../
+    sessions` lists them with a `current: true` flag, `DELETE .../sessions/
+    :id` and `.../revoke-others` work. `src/routes/sessions.ts`.
+20. **(Engineer B)** TOTP for platform admins: self-contained RFC 6238
+    implementation (`src/lib/totp.ts`, no third-party TOTP package — cross-
+    checked against an independent Python reference implementation during
+    testing, not just unit-tested against itself). Two-step login once
+    enrolled (password → short-lived challenge → code), challenges are
+    single-use, secret encrypted at rest via the same AES-256-GCM helper
+    KYC uses. Verified end-to-end including wrong-code rejection and
+    challenge replay rejection. `src/routes/adminMfa.ts`.
+21. **(Engineer B)** CSRF: double-submit cookie (`nx_csrf`, non-httpOnly)
+    issued alongside every session cookie, required as `x-csrf-token` on
+    every mutating request; webhook routes are exempt (HMAC-authenticated,
+    no session to forge). Verified: missing/wrong token 403s, correct token
+    passes through to normal route validation, GETs are unaffected.
+    `src/lib/csrf.ts`.
+22. **(Engineer B)** Rate limiting: global 300 req/min via `@fastify/rate-
+    limit`, tighter per-route limits (10/min) on every login, signup, and
+    MFA-verify endpoint, 5/min on password-reset requests.
+
+Known pre-existing issue, not introduced by this work and not fixed here
+since it's in shared infra (`minio` dependency, Engineer A's): `npm audit`
+shows 4 moderate transitive vulnerabilities in `minio`'s own dependency
+tree. Fixing requires a breaking `minio` downgrade — worth a deliberate
+decision by whoever owns that file, not a silent side effect of this task.
 
 ## Non-negotiable rules
 
@@ -99,7 +143,7 @@ Days 4–6: wallet recharge architecture, Razorpay sandbox webhook, COD reconcil
 invoice metadata and finance approvals. **Done 2026-09-13** — see items 14–16 above.
 
 Days 7–8: team invitations, password reset, session revocation, TOTP for admin/finance,
-CSRF and rate limiting. **Next up.**
+CSRF and rate limiting. **Done 2026-09-13** — see items 17–22 above.
 
 Days 9–10: admin UI wiring, audit/job/webhook visibility, staging checklist and restore
 test.

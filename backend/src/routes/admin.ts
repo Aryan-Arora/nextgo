@@ -6,6 +6,8 @@ import argon2 from 'argon2';
 import { config } from '../config.js';
 import { newSessionToken } from '../lib/session.js';
 import { requirePlatformAdmin, requireCommercialAdmin } from '../lib/adminAuth.js';
+import { sessionCookieOptions } from '../lib/cookies.js';
+import { issueCsrfCookie, clearCsrfCookie } from '../lib/csrf.js';
 
 const courierInput = z.object({
   code: z.string().regex(/^[a-z0-9-]{2,64}$/),
@@ -50,19 +52,11 @@ const adminLoginInput = z.object({
   password: z.string().min(1).max(200),
 });
 
-const cookieOptions = {
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  secure: config.NODE_ENV === 'production',
-  path: '/',
-  maxAge: config.SESSION_TTL_DAYS * 24 * 60 * 60,
-};
-
 export async function adminRoutes(app: FastifyInstance) {
-  app.post('/v1/admin/auth/login', async (request, reply) => {
+  app.post('/v1/admin/auth/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
     const input = adminLoginInput.parse(request.body);
-    const account = await db.query<{ user_id: string; password_hash: string; role: string; full_name: string }>(
-      `SELECT pa.user_id, u.password_hash, pa.role, u.full_name
+    const account = await db.query<{ user_id: string; password_hash: string; role: string; full_name: string; mfa_required: boolean; totp_enrolled_at: string | null }>(
+      `SELECT pa.user_id, u.password_hash, pa.role, u.full_name, pa.mfa_required, pa.totp_enrolled_at
        FROM platform_admins pa JOIN users u ON u.id = pa.user_id
        WHERE u.email = $1`, [input.email.toLowerCase()],
     );
@@ -70,13 +64,22 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!admin || !(await argon2.verify(admin.password_hash, input.password))) {
       return reply.code(401).send({ error: 'INVALID_CREDENTIALS' });
     }
+    // MFA is only enforceable once an admin has actually enrolled a device —
+    // an admin with mfa_required=true but no enrolled secret still logs in
+    // with password alone and is expected to enroll immediately after.
+    if (admin.mfa_required && admin.totp_enrolled_at) {
+      const mfaToken = newSessionToken();
+      await db.query(`INSERT INTO admin_mfa_challenges (user_id, token_hash, expires_at) VALUES ($1,$2, now() + interval '5 minutes')`, [admin.user_id, hashSessionToken(mfaToken)]);
+      return reply.code(202).send({ requiresMfa: true, mfaToken });
+    }
     const token = newSessionToken();
     const session = await db.query<{ expires_at: string }>(
-      `INSERT INTO sessions (user_id, token_hash, expires_at)
-       VALUES ($1, $2, now() + ($3 || ' days')::interval) RETURNING expires_at`,
-      [admin.user_id, hashSessionToken(token), String(config.SESSION_TTL_DAYS)],
+      `INSERT INTO sessions (user_id, token_hash, expires_at, user_agent, ip_address)
+       VALUES ($1, $2, now() + ($3 || ' days')::interval, $4, $5) RETURNING expires_at`,
+      [admin.user_id, hashSessionToken(token), String(config.SESSION_TTL_DAYS), request.headers['user-agent'] ?? null, request.ip],
     );
-    reply.setCookie('nx_session', token, cookieOptions);
+    reply.setCookie('nx_session', token, sessionCookieOptions());
+    issueCsrfCookie(reply);
     return { userId: admin.user_id, fullName: admin.full_name, role: admin.role, expiresAt: session.rows[0].expires_at };
   });
 
@@ -84,6 +87,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const token = request.cookies.nx_session;
     if (token) await db.query('UPDATE sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL', [hashSessionToken(token)]);
     reply.clearCookie('nx_session', { path: '/' });
+    clearCsrfCookie(reply);
     return reply.code(204).send();
   });
 
