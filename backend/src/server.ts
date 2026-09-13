@@ -9,6 +9,8 @@ import { db } from './db/client.js';
 import { authRoutes } from './routes/auth.js';
 import { sellerRoutes } from './routes/seller.js';
 import { adminRoutes } from './routes/admin.js';
+import { adminOperationsRoutes } from './routes/adminOperations.js';
+import { kycRoutes } from './routes/kyc.js';
 import { shippingRoutes } from './routes/shipping.js';
 import { operationsRoutes } from './routes/operations.js';
 import { shipmentRoutes } from './routes/shipments.js';
@@ -47,6 +49,8 @@ await app.register(exceptionRoutes);
 await app.register(walletRoutes);
 await app.register(integrationRoutes);
 await app.register(adminRoutes);
+await app.register(adminOperationsRoutes);
+await app.register(kycRoutes);
 
 const close = async () => { await app.close(); await db.end(); };
 process.on('SIGTERM', close); process.on('SIGINT', close);

@@ -1,28 +1,11 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { db } from '../db/client.js';
 import { hashSessionToken } from '../lib/session.js';
 import { z } from 'zod';
 import argon2 from 'argon2';
 import { config } from '../config.js';
 import { newSessionToken } from '../lib/session.js';
-
-type AdminPrincipal = { userId: string; role: string };
-declare module 'fastify' { interface FastifyRequest { adminPrincipal?: AdminPrincipal } }
-
-async function requirePlatformAdmin(request: FastifyRequest) {
-  const token = request.cookies.nx_session;
-  if (!token) throw Object.assign(new Error('Platform administrator authentication required'), { statusCode: 401 });
-  const result = await db.query<AdminPrincipal>('SELECT pa.user_id AS "userId", pa.role FROM sessions se JOIN platform_admins pa ON pa.user_id = se.user_id WHERE se.token_hash = $1 AND se.revoked_at IS NULL AND se.expires_at > now() LIMIT 1', [hashSessionToken(token)]);
-  if (!result.rows[0]) throw Object.assign(new Error('Platform administrator authentication required'), { statusCode: 403 });
-  request.adminPrincipal = result.rows[0];
-}
-
-async function requireCommercialAdmin(request: FastifyRequest) {
-  const role = request.adminPrincipal!.role;
-  if (!['super_admin', 'operations_admin'].includes(role)) {
-    throw Object.assign(new Error('This administrator role cannot change shipping configuration'), { statusCode: 403 });
-  }
-}
+import { requirePlatformAdmin, requireCommercialAdmin } from '../lib/adminAuth.js';
 
 const courierInput = z.object({
   code: z.string().regex(/^[a-z0-9-]{2,64}$/),
@@ -106,13 +89,8 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get('/v1/admin/me', { preHandler: requirePlatformAdmin }, async (request) => ({ userId: request.adminPrincipal!.userId, role: request.adminPrincipal!.role }));
 
-  // This is deliberately cross-tenant and therefore only exists behind the
-  // separate platform-admin guard. Pagination/filtering come with the seller
-  // lifecycle module; this initial route proves the trust boundary first.
-  app.get('/v1/admin/sellers', { preHandler: requirePlatformAdmin }, async () => {
-    const result = await db.query('SELECT id, legal_name, slug, state, created_at FROM sellers ORDER BY created_at DESC LIMIT 50');
-    return { items: result.rows };
-  });
+  // Seller lifecycle (list/detail/state transitions) lives in adminOperations.ts
+  // alongside the other cross-tenant queues, so it isn't split across two files.
 
   app.get('/v1/admin/couriers', { preHandler: requirePlatformAdmin }, async () => {
     const result = await db.query(
