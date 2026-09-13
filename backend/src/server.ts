@@ -18,6 +18,7 @@ import { trackingRoutes } from './routes/tracking.js';
 import { exceptionRoutes } from './routes/exceptions.js';
 import { walletRoutes } from './routes/wallet.js';
 import { integrationRoutes } from './routes/integrations.js';
+import { pickupRoutes } from './routes/pickups.js';
 
 const app = Fastify({ logger: { level: config.NODE_ENV === 'production' ? 'info' : 'debug' }, requestIdHeader: 'x-request-id' });
 await app.register(helmet, { contentSecurityPolicy: false });
@@ -48,6 +49,7 @@ await app.register(trackingRoutes);
 await app.register(exceptionRoutes);
 await app.register(walletRoutes);
 await app.register(integrationRoutes);
+await app.register(pickupRoutes);
 await app.register(adminRoutes);
 await app.register(adminOperationsRoutes);
 await app.register(kycRoutes);
