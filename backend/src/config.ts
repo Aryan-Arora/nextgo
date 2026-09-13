@@ -16,6 +16,12 @@ const schema = z.object({
   // 32-byte AES-256 key, base64-encoded. Local dev only — production uses
   // per-record envelope encryption via AWS KMS instead of a static key.
   LOCAL_ENCRYPTION_KEY: z.string().min(1),
+  // Optional: unset means "use the deterministic mock gateway," the same
+  // pattern as the mock courier adapter. Set all three once real Razorpay
+  // test-mode credentials exist.
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().default('local-development-razorpay-webhook-secret'),
 });
 
 export const config = schema.parse(process.env);

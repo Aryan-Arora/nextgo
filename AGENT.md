@@ -44,6 +44,23 @@ production build, not an MVP mock.
     `support_admin` account: read access stays open, writes 403 correctly.
     `src/lib/adminAuth.ts` (extracted from `admin.ts` so both new route files
     and the original share one guard implementation instead of three).
+14. **(Engineer B)** Wallet recharge: `src/lib/razorpay.ts` mirrors the mock
+    courier adapter pattern — no live keys means a deterministic mock order
+    and a self-signed webhook, so the full recharge → HMAC-verified webhook
+    → idempotent ledger credit flow is tested end to end without a real
+    Razorpay account (verified: balance credits once, replay is a no-op, bad
+    signature is 401). Migration `0013`, `src/routes/walletRecharge.ts`.
+15. **(Engineer B)** Invoices: gapless sequential numbering (`NX/FY/000001`,
+    counter increments in the same transaction as the insert so a failed
+    invoice never leaves a gap), 18% GST computed from real shipment
+    charges, admin generate/issue, worker renders a real PDF via pdfkit into
+    MinIO (verified: 1669-byte PDF actually produced). `src/routes/
+    invoices.ts`, `worker.ts` `invoice.generate` handler.
+16. **(Engineer B)** COD reconciliation: three-step cycle (generate → approve
+    → remit), each step audited and role-gated, remit refuses to run before
+    approve (verified: 409). COD cash is tracked in its own table, not
+    folded into `wallet_entries`, since courier-collected COD never actually
+    enters the prepaid wallet. `src/routes/codRemittance.ts`.
 
 ## Non-negotiable rules
 
@@ -79,10 +96,10 @@ reference table a rate card's `zone_code` should resolve against) was the piece
 still missing and is now in migration `0011`.
 
 Days 4–6: wallet recharge architecture, Razorpay sandbox webhook, COD reconciliation,
-invoice metadata and finance approvals. **Next up.**
+invoice metadata and finance approvals. **Done 2026-09-13** — see items 14–16 above.
 
 Days 7–8: team invitations, password reset, session revocation, TOTP for admin/finance,
-CSRF and rate limiting.
+CSRF and rate limiting. **Next up.**
 
 Days 9–10: admin UI wiring, audit/job/webhook visibility, staging checklist and restore
 test.
