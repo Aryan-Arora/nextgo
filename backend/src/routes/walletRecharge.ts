@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { createHash } from 'node:crypto';
 import { withSellerTransaction, withTransaction } from '../db/client.js';
 import { audit } from '../lib/audit.js';
 import { createRazorpayOrder, verifyRazorpayWebhookSignature } from '../lib/razorpay.js';
@@ -50,8 +51,16 @@ export async function walletRechargeRoutes(app: FastifyInstance) {
       return reply.code(401).send({ error: 'INVALID_WEBHOOK_SIGNATURE' });
     }
     const input = razorpayEvent.parse(request.body);
-    if (input.event !== 'payment.captured') return { accepted: true, ignored: input.event };
     const payment = input.payload.payment.entity;
+    // Logged for admin webhook-delivery visibility, same table couriers use —
+    // this is independent of the recharge-status idempotency check below,
+    // which remains the actual business-logic guard against double-crediting.
+    const delivery = await withTransaction((client) => client.query(
+      `INSERT INTO webhook_deliveries (provider_code, external_event_id, payload_hash, payload)
+       VALUES ('razorpay', $1, $2, $3) ON CONFLICT (provider_code, external_event_id) DO NOTHING RETURNING id`,
+      ['razorpay:' + payment.id, createHash('sha256').update(raw).digest('hex'), JSON.stringify(input)],
+    ));
+    if (input.event !== 'payment.captured') return { accepted: true, ignored: input.event };
     const result = await withTransaction(async (client) => {
       const recharge = await client.query<{ id: string; seller_id: string; amount_paise: string; status: string }>(
         'SELECT id, seller_id, amount_paise, status FROM wallet_recharges WHERE provider_order_id = $1 FOR UPDATE',
@@ -70,6 +79,9 @@ export async function walletRechargeRoutes(app: FastifyInstance) {
       await audit(client, { sellerId: recharge.rows[0].seller_id, action: 'wallet.recharge_succeeded', targetType: 'wallet_recharge', targetId: recharge.rows[0].id, requestId: request.id, metadata: { providerPaymentId: payment.id } });
       return { matched: true, duplicate: false };
     });
+    if (delivery.rows[0]) {
+      await withTransaction((client) => client.query('UPDATE webhook_deliveries SET processed_at=now(), processing_error=$1 WHERE id=$2', [result.matched ? null : 'Recharge not found for this order', delivery.rows[0].id]));
+    }
     if (!result.matched) return reply.code(404).send({ error: 'RECHARGE_NOT_FOUND' });
     return { accepted: true, duplicate: result.duplicate ?? false };
   });

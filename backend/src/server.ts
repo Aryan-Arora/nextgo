@@ -13,6 +13,7 @@ import { sellerRoutes } from './routes/seller.js';
 import { adminRoutes } from './routes/admin.js';
 import { adminMfaRoutes } from './routes/adminMfa.js';
 import { adminOperationsRoutes } from './routes/adminOperations.js';
+import { adminVisibilityRoutes } from './routes/adminVisibility.js';
 import { kycRoutes } from './routes/kyc.js';
 import { teamRoutes } from './routes/team.js';
 import { passwordResetRoutes } from './routes/passwordReset.js';
@@ -72,6 +73,7 @@ await app.register(sessionRoutes);
 await app.register(adminRoutes);
 await app.register(adminMfaRoutes);
 await app.register(adminOperationsRoutes);
+await app.register(adminVisibilityRoutes);
 await app.register(kycRoutes);
 
 const close = async () => { await app.close(); await db.end(); };

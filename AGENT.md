@@ -106,6 +106,36 @@ shows 4 moderate transitive vulnerabilities in `minio`'s own dependency
 tree. Fixing requires a breaking `minio` downgrade — worth a deliberate
 decision by whoever owns that file, not a silent side effect of this task.
 
+23. **(Engineer B)** Audit/job/webhook admin visibility: `GET /v1/admin/
+    audit-events` (cross-tenant, filterable), `GET /v1/admin/jobs` +
+    `POST /v1/admin/jobs/:id/retry` (verified: a dead-lettered job requeues
+    and correctly refuses a second retry while still queued), `GET /v1/
+    admin/webhook-deliveries` (couriers and Razorpay both log here now —
+    the Razorpay webhook handler was extended to log every delivery to the
+    same table couriers use, for parity). `src/routes/adminVisibility.ts`.
+24. **(Engineer B)** Real backup/restore drill — not a checklist line, an
+    actual `pg_dump` → scratch database → `pg_restore` → row-count diff
+    across 13 tables, all matching exactly, plus a byte-for-byte content
+    spot-check on one row. Documented with the real numbers in
+    `STAGING_CHECKLIST.md`.
+25. **(Engineer B)** `STAGING_CHECKLIST.md`: every item is either checked
+    with what was actually verified and when, or explicitly left open with
+    what it's blocked on (mostly: an AWS environment existing) — no
+    unchecked boxes without a stated reason.
+26. **(Engineer B)** Admin frontend wiring — **scoped, not exhaustive.**
+    `lib/api.js` is a shared fetch client (credentials + CSRF header
+    handling) any admin screen can use. `AdminLogin.jsx` is fully wired to
+    the real API including the MFA step, and was verified end-to-end
+    through an actual browser session: real password check against the
+    live database → real MFA challenge → TOTP verified → real session
+    cookie → landed on the dashboard, zero console errors. The dashboard
+    itself and the sellers/KYC/zones list screens are **still rendering
+    mock data** — wiring those needs either accepting their mocked
+    analytics (revenue trend, NDR trend, API usage) as out of scope, or
+    building aggregation endpoints for them first, which wasn't in the
+    Days 9-10 brief as written. Flagging this explicitly rather than
+    claiming more than what's actually wired.
+
 ## Non-negotiable rules
 
 - Every seller-owned record needs `seller_id`, server-side ownership checks, and RLS.
@@ -146,7 +176,8 @@ Days 7–8: team invitations, password reset, session revocation, TOTP for admin
 CSRF and rate limiting. **Done 2026-09-13** — see items 17–22 above.
 
 Days 9–10: admin UI wiring, audit/job/webhook visibility, staging checklist and restore
-test.
+test. **Done 2026-09-13** — see items 23–26 above. Admin UI wiring is scoped to login +
+a shared API client, not every screen; see item 26 for exactly what's real vs. still mock.
 
 ## Day-10 acceptance target
 

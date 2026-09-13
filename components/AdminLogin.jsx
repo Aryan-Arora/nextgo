@@ -4,14 +4,44 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useAppState } from '@/lib/AppStateContext';
 import * as T from '@/lib/theme';
+import { adminApi, ApiError } from '@/lib/api';
 
 const METRICS = [['8', 'Courier partners'], ['29,000', 'Serviceable pincodes'], ['99.4%', 'Platform availability']];
 
 export default function AdminLogin() {
   const { nav, vw, theme, toggleTheme } = useAppState();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [mfaToken, setMfaToken] = useState(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const mobile = vw <= T.MOBILE_BREAK;
   const dark = theme === 'dark';
+
+  async function submitPassword(event) {
+    event.preventDefault();
+    setError(''); setBusy(true);
+    try {
+      const result = await adminApi.login(email, password);
+      if (result.requiresMfa) { setMfaToken(result.mfaToken); return; }
+      nav('a-overview');
+    } catch (err) {
+      setError(err instanceof ApiError && err.status === 401 ? 'Incorrect email or password.' : 'Something went wrong. Try again.');
+    } finally { setBusy(false); }
+  }
+
+  async function submitMfa(event) {
+    event.preventDefault();
+    setError(''); setBusy(true);
+    try {
+      await adminApi.verifyMfa(mfaToken, mfaCode);
+      nav('a-overview');
+    } catch (err) {
+      setError(err instanceof ApiError && err.status === 401 ? 'That code didn’t work — check the time on your authenticator app.' : 'Something went wrong. Try again.');
+    } finally { setBusy(false); }
+  }
   const field = {
     width: '100%', height: 42, padding: '0 12px', border: '1px solid var(--nx-input-border)',
     borderRadius: 9, outline: 'none', background: 'var(--nx-surface)', color: 'var(--nx-text)',
@@ -47,15 +77,24 @@ export default function AdminLogin() {
         <div style={{ width: 'min(100%, 400px)', padding: mobile ? '29px 26px 26px' : '32px 34px 29px', background: 'var(--nx-glass-1)', backdropFilter: 'blur(18px) saturate(160%)', border: '1px solid var(--nx-glass-border)', borderRadius: 16, boxShadow: '0 1px 1px rgba(15,23,42,.05), 0 24px 60px rgba(6,12,10,.35)' }}>
           {mobile && <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><div style={{ width: 26, height: 26, display: 'grid', placeItems: 'center', background: T.ACCENT, color: '#06212C', fontSize: 12, fontWeight: 850, clipPath: 'polygon(0 0,100% 0,100% 72%,72% 100%,0 100%)' }}>N</div><div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '.13em', color: T.TEXT }}>NEXGO</div></div>}
           <div style={{ marginTop: mobile ? 25 : 0 }}>
-            <div style={{ color: T.TEXT, fontSize: 23, lineHeight: 1.12, letterSpacing: '-.02em', fontWeight: 750 }}>Admin sign in</div>
-            <p style={{ margin: '6px 0 0', color: T.TEXT_SECONDARY, fontSize: 13, lineHeight: 1.55 }}>Access the NEXGO platform operations workspace.</p>
+            <div style={{ color: T.TEXT, fontSize: 23, lineHeight: 1.12, letterSpacing: '-.02em', fontWeight: 750 }}>{mfaToken ? 'Verification code' : 'Admin sign in'}</div>
+            <p style={{ margin: '6px 0 0', color: T.TEXT_SECONDARY, fontSize: 13, lineHeight: 1.55 }}>{mfaToken ? 'Enter the 6-digit code from your authenticator app.' : 'Access the NEXGO platform operations workspace.'}</p>
           </div>
-          <form onSubmit={(event) => { event.preventDefault(); window.localStorage.setItem('nx-admin-session', 'active'); nav('a-overview'); }} style={{ display: 'grid', gap: 15, marginTop: 23 }}>
-            <label style={{ display: 'grid', gap: 6 }}><span style={{ color: T.TEXT_LABEL, fontSize: 12.5, fontWeight: 650 }}>Work email <span style={{ color: T.RED }}>*</span></span><input aria-label="Work email" type="email" placeholder="name@nexgo.in" autoComplete="email" style={field} /></label>
-            <label style={{ display: 'grid', gap: 6 }}><span style={{ color: T.TEXT_LABEL, fontSize: 12.5, fontWeight: 650 }}>Password <span style={{ color: T.RED }}>*</span></span><span style={{ position: 'relative' }}><input aria-label="Password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" autoComplete="current-password" style={{ ...field, paddingRight: 68 }} /><button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', top: 7, right: 8, height: 28, border: 0, borderRadius: 6, background: 'transparent', color: '#0F766E', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{showPassword ? 'Hide' : 'Show'}</button></span></label>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: T.TEXT_SECONDARY, fontSize: 12 }}><span>Restricted to platform staff</span><span style={{ color: '#0F766E', fontWeight: 700, cursor: 'pointer' }}>Forgot password?</span></div>
-            <motion.button whileTap={{ scale: .98 }} type="submit" style={{ height: 41, marginTop: 2, border: 0, borderRadius: 8, background: '#0F766E', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 700, boxShadow: '0 9px 18px rgba(15,31,61,.2)' }}>Sign in to operations</motion.button>
-          </form>
+          {error && <div style={{ marginTop: 15, padding: '10px 12px', borderRadius: 8, background: 'rgba(178,58,43,.1)', border: '1px solid rgba(178,58,43,.25)', color: '#B23A2B', fontSize: 12.5, fontWeight: 600 }}>{error}</div>}
+          {mfaToken ? (
+            <form onSubmit={submitMfa} style={{ display: 'grid', gap: 15, marginTop: 20 }}>
+              <label style={{ display: 'grid', gap: 6 }}><span style={{ color: T.TEXT_LABEL, fontSize: 12.5, fontWeight: 650 }}>6-digit code <span style={{ color: T.RED }}>*</span></span><input aria-label="Verification code" value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="000000" autoFocus autoComplete="one-time-code" style={{ ...field, fontVariantNumeric: 'tabular-nums', letterSpacing: '.3em', textAlign: 'center' }} /></label>
+              <motion.button whileTap={{ scale: .98 }} type="submit" disabled={busy || mfaCode.length !== 6} style={{ height: 41, marginTop: 2, border: 0, borderRadius: 8, background: '#0F766E', color: '#fff', cursor: busy ? 'default' : 'pointer', opacity: busy || mfaCode.length !== 6 ? .6 : 1, fontSize: 14, fontWeight: 700, boxShadow: '0 9px 18px rgba(15,31,61,.2)' }}>{busy ? 'Verifying…' : 'Verify and sign in'}</motion.button>
+              <div onClick={() => { setMfaToken(null); setMfaCode(''); setError(''); }} style={{ textAlign: 'center', color: T.TEXT_SECONDARY, fontSize: 12, cursor: 'pointer' }}>← Back to password</div>
+            </form>
+          ) : (
+            <form onSubmit={submitPassword} style={{ display: 'grid', gap: 15, marginTop: 20 }}>
+              <label style={{ display: 'grid', gap: 6 }}><span style={{ color: T.TEXT_LABEL, fontSize: 12.5, fontWeight: 650 }}>Work email <span style={{ color: T.RED }}>*</span></span><input aria-label="Work email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@nexgo.in" autoComplete="email" required style={field} /></label>
+              <label style={{ display: 'grid', gap: 6 }}><span style={{ color: T.TEXT_LABEL, fontSize: 12.5, fontWeight: 650 }}>Password <span style={{ color: T.RED }}>*</span></span><span style={{ position: 'relative' }}><input aria-label="Password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" autoComplete="current-password" required style={{ ...field, paddingRight: 68 }} /><button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', top: 7, right: 8, height: 28, border: 0, borderRadius: 6, background: 'transparent', color: '#0F766E', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{showPassword ? 'Hide' : 'Show'}</button></span></label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: T.TEXT_SECONDARY, fontSize: 12 }}><span>Restricted to platform staff</span><span style={{ color: '#0F766E', fontWeight: 700, cursor: 'pointer' }}>Forgot password?</span></div>
+              <motion.button whileTap={{ scale: .98 }} type="submit" disabled={busy} style={{ height: 41, marginTop: 2, border: 0, borderRadius: 8, background: '#0F766E', color: '#fff', cursor: busy ? 'default' : 'pointer', opacity: busy ? .7 : 1, fontSize: 14, fontWeight: 700, boxShadow: '0 9px 18px rgba(15,31,61,.2)' }}>{busy ? 'Signing in…' : 'Sign in to operations'}</motion.button>
+            </form>
+          )}
           <div style={{ marginTop: 21, paddingTop: 16, borderTop: '1px solid var(--nx-divider)', color: T.TEXT_MUTED, fontSize: 11.5, lineHeight: 1.55 }}>Protected workspace · Access is logged and governed by platform role permissions.</div>
           <div style={{ marginTop: 13, textAlign: 'center', color: T.TEXT_SECONDARY, fontSize: 11.5 }}>Need the seller workspace? <a href="/login" style={{ color: '#0F766E', fontWeight: 700 }}>Sign in as a seller</a></div>
         </div>
