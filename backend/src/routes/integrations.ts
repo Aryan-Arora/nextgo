@@ -1,0 +1,13 @@
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { withSellerTransaction } from '../db/client.js';
+import { audit } from '../lib/audit.js';
+import { requireSeller } from './seller.js';
+const input = z.object({ provider: z.enum(['shopify', 'woocommerce', 'amazon', 'custom']), displayName: z.string().trim().min(2).max(120) });
+function p(r: FastifyRequest) { if (!r.principal) throw Object.assign(new Error('Authentication required'), { statusCode: 401 }); return r.principal; }
+export async function integrationRoutes(app: FastifyInstance) {
+  app.get('/v1/channels', { preHandler: requireSeller }, async (request) => { const x=p(request); return withSellerTransaction(x.sellerId, async c => ({ items:(await c.query('SELECT id,provider,display_name,state,last_synced_at,last_error,created_at FROM channel_connections WHERE seller_id=$1 ORDER BY created_at DESC',[x.sellerId])).rows })); });
+  app.post('/v1/channels', { preHandler: requireSeller }, async (request, reply) => { const v=input.parse(request.body); const x=p(request); const row=await withSellerTransaction(x.sellerId,async c=>{const q=await c.query('INSERT INTO channel_connections (seller_id,provider,display_name) VALUES ($1,$2,$3) RETURNING id,provider,display_name,state',[x.sellerId,v.provider,v.displayName]);await audit(c,{sellerId:x.sellerId,actorUserId:x.userId,action:'channel.created',targetType:'channel',targetId:q.rows[0].id,requestId:request.id});return q.rows[0]});return reply.code(201).send(row); });
+  app.post('/v1/channels/:channelId/sync', { preHandler: requireSeller }, async (request, reply) => { const x=p(request); const id=z.string().uuid().parse((request.params as {channelId:string}).channelId); const row=await withSellerTransaction(x.sellerId,async c=>{const channel=await c.query('SELECT id FROM channel_connections WHERE id=$1 AND seller_id=$2',[id,x.sellerId]);if(!channel.rows[0])throw Object.assign(new Error('Channel not found'),{statusCode:404});const q=await c.query(`INSERT INTO job_runs (seller_id,job_type,payload) VALUES ($1,'channel.sync',$2) RETURNING id,state,queued_at`,[x.sellerId,JSON.stringify({channelId:id})]);await audit(c,{sellerId:x.sellerId,actorUserId:x.userId,action:'channel.sync_requested',targetType:'channel',targetId:id,requestId:request.id,metadata:{jobId:q.rows[0].id}});return q.rows[0]});return reply.code(202).send(row); });
+  app.get('/v1/jobs', { preHandler: requireSeller }, async request => { const x=p(request);return withSellerTransaction(x.sellerId,async c=>({items:(await c.query('SELECT id,job_type,state,attempts,error_summary,queued_at,started_at,completed_at FROM job_runs WHERE seller_id=$1 ORDER BY queued_at DESC LIMIT 100',[x.sellerId])).rows})); });
+}

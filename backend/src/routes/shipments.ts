@@ -1,0 +1,39 @@
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { withSellerTransaction } from '../db/client.js';
+import { audit } from '../lib/audit.js';
+import { calculateRate, paiseToAmount } from '../lib/money.js';
+import { requireSeller } from './seller.js';
+
+const uuid = z.string().uuid();
+const bookingInput = z.object({ orderId: uuid, providerCode: z.string().regex(/^[a-z0-9-]{2,64}$/), serviceCode: z.string().regex(/^[a-z0-9-]{2,64}$/) });
+function principal(request: FastifyRequest) { if (!request.principal) throw Object.assign(new Error('Authentication required'), { statusCode: 401 }); return request.principal; }
+
+type Rate = { provider_id: string; provider_code: string; provider_name: string; service_id: string; service_code: string; service_name: string; base_weight_g: number; base_price_paise: number; additional_weight_g: number; additional_price_paise: number; cod_fee_paise: number; fuel_surcharge_bps: number; payment_mode: 'prepaid' | 'cod'; total_weight_g: number; destination_pincode: string };
+
+export async function shipmentRoutes(app: FastifyInstance) {
+  app.get('/v1/shipments', { preHandler: requireSeller }, async (request) => {
+    const p = principal(request); return withSellerTransaction(p.sellerId, async (client) => ({ items: (await client.query(`SELECT s.*,o.order_number,cp.name AS courier_name,cs.display_name AS service_name FROM shipments s JOIN orders o ON o.id=s.order_id JOIN courier_providers cp ON cp.id=s.provider_id JOIN courier_services cs ON cs.id=s.service_id WHERE s.seller_id=$1 ORDER BY s.created_at DESC LIMIT 100`, [p.sellerId])).rows }));
+  });
+  app.get('/v1/shipments/:shipmentId', { preHandler: requireSeller }, async (request) => {
+    const p = principal(request); const shipmentId = uuid.parse((request.params as { shipmentId: string }).shipmentId);
+    return withSellerTransaction(p.sellerId, async (client) => { const shipment = await client.query('SELECT * FROM shipments WHERE id=$1 AND seller_id=$2', [shipmentId, p.sellerId]); if (!shipment.rows[0]) throw Object.assign(new Error('Shipment not found'), { statusCode: 404 }); const events = await client.query('SELECT state,occurred_at,location,description,source FROM shipment_events WHERE shipment_id=$1 ORDER BY occurred_at DESC', [shipmentId]); return { ...shipment.rows[0], events: events.rows }; });
+  });
+  app.post('/v1/shipments/book', { preHandler: requireSeller }, async (request, reply) => {
+    const input = bookingInput.parse(request.body); const p = principal(request); const key = request.headers['idempotency-key'];
+    if (typeof key !== 'string' || key.length < 16 || key.length > 200) throw Object.assign(new Error('A 16-200 character Idempotency-Key header is required'), { statusCode: 400 });
+    const result = await withSellerTransaction(p.sellerId, async (client) => {
+      const previous = await client.query('SELECT * FROM shipments WHERE seller_id=$1 AND idempotency_key=$2', [p.sellerId, key]); if (previous.rows[0]) return { shipment: previous.rows[0], replay: true };
+      const rate = await client.query<Rate>(`SELECT cp.id AS provider_id,cp.code AS provider_code,cp.name AS provider_name,cs.id AS service_id,cs.code AS service_code,cs.display_name AS service_name,rcr.base_weight_g,rcr.base_price_paise,rcr.additional_weight_g,rcr.additional_price_paise,rcr.cod_fee_paise,rcr.fuel_surcharge_bps,o.payment_mode,o.total_weight_g,c.pincode AS destination_pincode FROM orders o JOIN customers c ON c.id=o.customer_id JOIN seller_courier_access sca ON sca.seller_id=o.seller_id AND sca.state='enabled' JOIN courier_services cs ON cs.id=sca.service_id AND cs.is_active JOIN courier_providers cp ON cp.id=cs.provider_id AND cp.integration_state='live' JOIN LATERAL (SELECT id FROM rate_cards WHERE seller_id=o.seller_id AND state='active' AND effective_from<=now() AND (effective_to IS NULL OR effective_to>now()) ORDER BY effective_from DESC LIMIT 1) card ON true JOIN rate_card_rates rcr ON rcr.rate_card_id=card.id AND rcr.service_id=cs.id AND rcr.zone_code='national' AND rcr.min_weight_g<=o.total_weight_g WHERE o.id=$1 AND o.seller_id=$2 AND o.state='ready_to_ship' AND cp.code=$3 AND cs.code=$4 AND (o.payment_mode='prepaid' OR sca.cod_enabled=true) AND NOT EXISTS (SELECT 1 FROM courier_pincode_rules blocked WHERE blocked.service_id=cs.id AND blocked.rule_type='blocked' AND c.pincode LIKE blocked.destination_prefix || '%') AND (NOT EXISTS (SELECT 1 FROM courier_pincode_rules allowed WHERE allowed.service_id=cs.id AND allowed.rule_type='allowed') OR EXISTS (SELECT 1 FROM courier_pincode_rules allowed WHERE allowed.service_id=cs.id AND allowed.rule_type='allowed' AND c.pincode LIKE allowed.destination_prefix || '%')) ORDER BY rcr.min_weight_g DESC LIMIT 1`, [input.orderId, p.sellerId, input.providerCode, input.serviceCode]);
+      const selection = rate.rows[0]; if (!selection) throw Object.assign(new Error('The selected courier service is not available for this ready-to-ship order'), { statusCode: 422 });
+      const price = calculateRate(selection, selection.total_weight_g || 1, selection.payment_mode === 'cod');
+      const shipment = await client.query(`INSERT INTO shipments (seller_id,order_id,provider_id,service_id,awb,chargeable_weight_g,shipping_charge_paise,quote_snapshot,idempotency_key) VALUES ($1,$2,$3,$4,'NXG' || upper(substr(replace(gen_random_uuid()::text,'-',''),1,12)),$5,$6,$7,$8) RETURNING *`, [p.sellerId, input.orderId, selection.provider_id, selection.service_id, Math.max(selection.total_weight_g, 1), price.totalPaise, JSON.stringify({ provider: selection.provider_code, service: selection.service_code, destinationPincode: selection.destination_pincode, paymentMode: selection.payment_mode, price }), key]);
+      await client.query("UPDATE orders SET state='booked',updated_at=now() WHERE id=$1", [input.orderId]);
+      await client.query("INSERT INTO shipment_events (shipment_id,state,occurred_at,description,source) VALUES ($1,'booked',now(),'Shipment booked successfully','booking')", [shipment.rows[0].id]);
+      await client.query(`INSERT INTO wallet_entries (seller_id,entry_type,amount_paise,reference_type,reference_id,idempotency_key,description)
+        VALUES ($1,'debit',$2,'shipment',$3,$4,$5)`, [p.sellerId, price.totalPaise, shipment.rows[0].id, `shipment-booking:${key}`, `Shipping charge for ${shipment.rows[0].awb}`]);
+      await audit(client, { sellerId: p.sellerId, actorUserId: p.userId, action: 'shipment.booked', targetType: 'shipment', targetId: shipment.rows[0].id, requestId: request.id, metadata: { orderId: input.orderId, awb: shipment.rows[0].awb, amount: paiseToAmount(price.totalPaise) } }); return { shipment: shipment.rows[0], replay: false };
+    });
+    return reply.code(result.replay ? 200 : 201).send(result);
+  });
+}

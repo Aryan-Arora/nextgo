@@ -2,20 +2,32 @@ import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rawBody from 'fastify-raw-body';
 import { ZodError } from 'zod';
 import { config } from './config.js';
 import { db } from './db/client.js';
 import { authRoutes } from './routes/auth.js';
 import { sellerRoutes } from './routes/seller.js';
 import { adminRoutes } from './routes/admin.js';
+import { shippingRoutes } from './routes/shipping.js';
+import { operationsRoutes } from './routes/operations.js';
+import { shipmentRoutes } from './routes/shipments.js';
+import { trackingRoutes } from './routes/tracking.js';
+import { exceptionRoutes } from './routes/exceptions.js';
+import { walletRoutes } from './routes/wallet.js';
+import { integrationRoutes } from './routes/integrations.js';
 
 const app = Fastify({ logger: { level: config.NODE_ENV === 'production' ? 'info' : 'debug' }, requestIdHeader: 'x-request-id' });
 await app.register(helmet, { contentSecurityPolicy: false });
 await app.register(cookie);
-await app.register(cors, { origin: config.FRONTEND_ORIGIN, credentials: true, methods: ['GET', 'POST', 'PATCH', 'DELETE'] });
+await app.register(rawBody, { field: 'rawBody', global: false, encoding: 'utf8', runFirst: true });
+await app.register(cors, { origin: config.FRONTEND_ORIGIN, credentials: true, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] });
 
 app.setErrorHandler((error, request, reply) => {
   if (error instanceof ZodError) return reply.code(400).send({ error: 'VALIDATION_ERROR', details: error.flatten() });
+  if ((error as { statusCode?: number }).statusCode && (error as { statusCode?: number }).statusCode! < 500) {
+    return reply.code((error as { statusCode: number }).statusCode).send({ error: (error as Error).message });
+  }
   request.log.error(error);
   return reply.code((error as { statusCode?: number }).statusCode || 500).send({ error: 'INTERNAL_ERROR' });
 });
@@ -27,6 +39,13 @@ app.get('/ready', async (_request, reply) => {
 });
 await app.register(authRoutes);
 await app.register(sellerRoutes);
+await app.register(shippingRoutes);
+await app.register(operationsRoutes);
+await app.register(shipmentRoutes);
+await app.register(trackingRoutes);
+await app.register(exceptionRoutes);
+await app.register(walletRoutes);
+await app.register(integrationRoutes);
 await app.register(adminRoutes);
 
 const close = async () => { await app.close(); await db.end(); };

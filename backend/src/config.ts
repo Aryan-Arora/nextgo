@@ -7,6 +7,7 @@ const schema = z.object({
   DATABASE_URL: z.string().url(),
   FRONTEND_ORIGIN: z.string().url().default('http://localhost:3021'),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().max(30).default(7),
+  COURIER_WEBHOOK_SECRET: z.string().min(32).optional(),
 });
 
 export const config = schema.parse(process.env);

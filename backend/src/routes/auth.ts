@@ -24,7 +24,7 @@ export async function authRoutes(app: FastifyInstance) {
       const user = await client.query<{ id: string }>('INSERT INTO users (email, password_hash, full_name) VALUES ($1, $2, $3) RETURNING id', [input.email.toLowerCase(), passwordHash, input.fullName]);
       await client.query('INSERT INTO seller_memberships (seller_id, user_id, role) VALUES ($1, $2, \'owner\')', [seller.rows[0].id, user.rows[0].id]);
       const created = await client.query<{ id: string; expires_at: string }>('INSERT INTO sessions (user_id, token_hash, expires_at) VALUES ($1, $2, now() + ($3 || \' days\')::interval) RETURNING id, expires_at', [user.rows[0].id, hashSessionToken(token), String(config.SESSION_TTL_DAYS)]);
-      await client.query('INSERT INTO audit_events (seller_id, actor_user_id, action, target_type, target_id, request_id) VALUES ($1, $2, \'seller.created\', \'seller\', $1::text, $3)', [seller.rows[0].id, user.rows[0].id, request.id]);
+      await client.query('INSERT INTO audit_events (seller_id, actor_user_id, action, target_type, target_id, request_id) VALUES ($1, $2, \'seller.created\', \'seller\', $3, $4)', [seller.rows[0].id, user.rows[0].id, seller.rows[0].id, request.id]);
       return { seller: seller.rows[0], userId: user.rows[0].id, session: created.rows[0] };
     });
     if (!session) return reply.code(409).send({ error: 'EMAIL_ALREADY_REGISTERED' });

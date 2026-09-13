@@ -6,6 +6,19 @@ Build the actual NEXGO product logic for the seller portal and platform admin po
 
 This is not a throwaway prototype backend. It is the production domain model and API, started with local infrastructure.
 
+## Current implementation status — 13 September 2026
+
+Completed locally: Docker infrastructure; PostgreSQL migrations; seller/admin sessions;
+seller isolation; warehouses, products, customers and orders; platform courier services;
+seller access and versioned rate cards; destination-pincode allow/block rules; quote and
+idempotent booking; canonical tracking/webhook ingest; NDR; wallet-ledger foundation;
+channel connection/job models; and a database-backed worker.
+
+Not yet production-complete: real provider adapters, file/label generation, jobs beyond
+the deterministic local channel-sync handler, payment/COD/invoices, KYC/admin operations,
+team security, frontend API wiring, AWS deployment, and test/security gates. Read
+`AGENT.md` before making changes: it contains ownership, constraints, and the two-week plan.
+
 ## Local development stack
 
 | Concern | Build now | Replace or host later on AWS |

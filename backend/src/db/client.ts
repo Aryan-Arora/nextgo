@@ -17,3 +17,10 @@ export async function withTransaction<T>(work: (client: PoolClient) => Promise<T
     client.release();
   }
 }
+
+export async function withSellerTransaction<T>(sellerId: string, work: (client: PoolClient) => Promise<T>): Promise<T> {
+  return withTransaction(async (client) => {
+    await client.query("SELECT set_config('app.seller_id', $1, true)", [sellerId]);
+    return work(client);
+  });
+}
